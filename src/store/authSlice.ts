@@ -3,13 +3,14 @@
 
 import { AxiosError } from "axios";
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
-import clientApi from "@/services/client-api";
+import clientApi from "@/services/serverApiClient";
 import Cookies from "js-cookie";
 
 interface AuthState {
   token: string | null;
   loading: boolean;
   error: string | null;
+  isAuthenticated: boolean; // ✅ Nouvel état pour l'authentification
 }
 
 interface LoginCredentials {
@@ -17,10 +18,18 @@ interface LoginCredentials {
   password: string;
 }
 
+const getInitialToken = () => {
+  if (typeof window !== "undefined") {
+    return localStorage.getItem("jwt_token");
+  }
+  return null;
+};
+
 const initialState: AuthState = {
-  token: typeof window !== "undefined" ? localStorage.getItem("jwt_token") : null,
+  token: getInitialToken(),
   loading: false,
   error: null,
+  isAuthenticated: !!getInitialToken(), // ✅ Détermine l'état initial
 };
 
 export const loginUser = createAsyncThunk<
@@ -55,6 +64,7 @@ const authSlice = createSlice({
     logout(state) {
       state.token = null;
       state.error = null;
+      state.isAuthenticated = false; // ✅ Mise à jour de l'état
       if (typeof window !== "undefined") {
         localStorage.removeItem("jwt_token");
         Cookies.remove("jwt_token");
@@ -62,6 +72,7 @@ const authSlice = createSlice({
     },
     setToken(state, action: PayloadAction<string>) {
       state.token = action.payload;
+      state.isAuthenticated = true; // ✅ Mise à jour de l'état
       if (typeof window !== "undefined") {
         localStorage.setItem("jwt_token", action.payload);
         Cookies.set("jwt_token", action.payload, { expires: 7, secure: true, sameSite: 'strict' });
@@ -73,14 +84,17 @@ const authSlice = createSlice({
       .addCase(loginUser.pending, (state) => {
         state.loading = true;
         state.error = null;
+        state.isAuthenticated = false;
       })
       .addCase(loginUser.fulfilled, (state, action: PayloadAction<string>) => {
         state.loading = false;
         state.token = action.payload;
+        state.isAuthenticated = true; // ✅ Indique le succès de la connexion
       })
       .addCase(loginUser.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload || "Erreur inconnue";
+        state.isAuthenticated = false;
       });
   },
 });

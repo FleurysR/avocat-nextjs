@@ -1,74 +1,140 @@
-// src/app/Espace-avocat/decision/page.tsx
-import serverApi from "@/services/server-api";
-import { cookies } from 'next/headers';
-import { redirect } from 'next/navigation';
-import { Decision } from "@/types";
+"use client";
 
-export default async function DecisionsPage() {
-  // Récupération du token côté serveur
-  const cookieStore = await cookies();
-  const token = cookieStore.get('jwt_token')?.value;
+import { useState, useEffect } from "react";
+import { fetchDecisions, fetchDecisionByCode } from "@/services/client-api";
+import { Decision, DecisionDetails } from "@/types";
+import { useSearch } from "@/components/context/SearchContext";
+import { Pagination } from "@/components/Pagination";
+import { Spinner } from "@/components/ui/shadcn-io/spinner/index";
+import { Badge } from "@/components/ui/badge";
+import DecisionModal from "@/components/modals/DecisionModal";
 
-  if (!token) {
-    redirect('/login'); // redirection si non connecté
-  }
+const PAGE_SIZE = 10;
 
-  let decisions: Decision[] = [];
-  let error: string | null = null;
+export default function DecisionsPage() {
+  const [decisions, setDecisions] = useState<Decision[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalHits, setTotalHits] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  try {
-    const response = await serverApi.get("/decisions");
-    // Récupérer les données dans le format attendu
-    decisions = Array.isArray(response.data) ? response.data : response.data?.hits || [];
-  } catch (err: unknown) {
-    const e = err as { response?: { data?: { message?: string } } };
-    error = e.response?.data?.message || "Erreur lors de la récupération des décisions";
-  }
+  const [selectedDecisionCode, setSelectedDecisionCode] = useState<string | null>(null);
+  const [detailedDecision, setDetailedDecision] = useState<DecisionDetails | null>(null);
+  const [loadingDetails, setLoadingDetails] = useState(false);
+  const [errorDetails, setErrorDetails] = useState<string | null>(null);
 
-  // Affichage en cas d'erreur
-  if (error) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-slate-50 dark:bg-slate-900 text-gray-900 dark:text-gray-100">
-        <div className="p-6 rounded-lg shadow-lg bg-red-100 dark:bg-red-900 border border-red-500">
-          <p className="text-red-500 font-bold text-center">{error}</p>
-        </div>
-      </div>
-    );
-  }
+  const { searchTerm } = useSearch();
+
+  // Charger la liste des décisions
+  useEffect(() => {
+    const loadDecisions = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const offset = (currentPage - 1) * PAGE_SIZE;
+        const data = await fetchDecisions(searchTerm, PAGE_SIZE, offset);
+        setDecisions(data.hits || []);
+        setTotalHits(data.estimatedTotalHits || 0);
+        setTotalPages(Math.ceil((data.estimatedTotalHits || 0) / PAGE_SIZE));
+      } catch {
+        setError("Erreur lors de la récupération des décisions.");
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadDecisions();
+  }, [currentPage, searchTerm]);
+
+  // Charger les détails d'une décision
+  useEffect(() => {
+    const loadDecisionDetails = async () => {
+      if (!selectedDecisionCode) return;
+      setLoadingDetails(true);
+      setErrorDetails(null);
+      try {
+        const data = await fetchDecisionByCode(selectedDecisionCode);
+        setDetailedDecision(data);
+      } catch {
+        setErrorDetails("Erreur lors de la récupération des détails.");
+      } finally {
+        setLoadingDetails(false);
+      }
+    };
+    loadDecisionDetails();
+  }, [selectedDecisionCode]);
+
+  const closeModal = () => {
+    setSelectedDecisionCode(null);
+    setDetailedDecision(null);
+    setErrorDetails(null);
+  };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 text-gray-900 dark:text-gray-100 p-6">
-      <div className="container mx-auto">
-        <h1 className="text-3xl font-bold mb-6 text-indigo-700 dark:text-indigo-400 border-b-2 border-indigo-500 pb-2">
-          Mes Décisions
-        </h1>
+    <div className="bg-slate-50 dark:bg-slate-950 min-h-screen text-slate-900 dark:text-slate-50 p-4 sm:p-8">
+      <div className="container mx-auto max-w-screen-xl">
+        <header className="pb-6 border-b border-indigo-500">
+          <h1 className="text-3xl font-bold text-indigo-700 dark:text-indigo-400 mb-2">
+            Toutes les Décisions
+          </h1>
+          {searchTerm && (
+            <p className="text-gray-700 dark:text-gray-300">
+              {totalHits} résultat(s) pour votre recherche
+            </p>
+          )}
+        </header>
 
-        {decisions.length === 0 ? (
-          <p className="text-gray-500 dark:text-gray-400">Aucune décision trouvée pour le moment.</p>
-        ) : (
-          <ul className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {decisions.map((decision) => (
-              <li
-                key={decision.code}
-                className="p-6 bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-gray-200 dark:border-slate-700 hover:border-indigo-500 transition-all duration-300 transform hover:scale-105"
-              >
-                <h2 className="font-semibold text-lg text-indigo-700 dark:text-indigo-400 mb-2">
-                  {decision.numeroDossier} - {decision.objet}
-                </h2>
-                <p className="text-gray-600 dark:text-gray-300 mb-1">
-                  Président de la chambre : {decision.presidentChambre}
-                </p>
-                <p className="text-gray-600 dark:text-gray-300 mb-1">
-                  Date de décision : {new Date(decision.decisionAt).toLocaleDateString()}
-                </p>
-                <p className="text-gray-500 dark:text-gray-400 text-sm">
-                  Score de pertinence : {decision._rankingScore.toFixed(2)}
-                </p>
-              </li>
-            ))}
-          </ul>
-        )}
+        <main className="mt-6">
+          {loading ? (
+            <div className="flex items-center justify-center min-h-[300px]">
+              <Spinner variant="ring" size={48} className="text-indigo-600 dark:text-indigo-400" />
+            </div>
+          ) : error ? (
+            <p className="text-center text-red-500 p-6">{error}</p>
+          ) : decisions.length === 0 ? (
+            <p className="text-gray-500 dark:text-gray-400 text-center p-6">Aucune décision trouvée.</p>
+          ) : (
+            <ul className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {decisions.map((decision) => (
+                <li key={decision.code}>
+                  <div
+                    onClick={() => setSelectedDecisionCode(decision.code)}
+                    className="bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-gray-200 dark:border-slate-700 p-6 hover:shadow-xl transition-transform transform hover:-translate-y-1 cursor-pointer"
+                  >
+                    <h2 className="text-xl font-semibold text-indigo-700 dark:text-indigo-400 mb-2 line-clamp-2">
+                      {decision.objet || "Sans objet"}
+                    </h2>
+
+                    <div className="flex flex-wrap gap-2 mb-2">
+                      <Badge variant="secondary">Dossier n°: {decision.numeroDossier || "-"}</Badge>
+                      <Badge variant="secondary">Date: {decision.decisionAt ? new Date(decision.decisionAt).toLocaleDateString() : "-"}</Badge>
+                    </div>
+
+                    <div className="flex flex-wrap gap-2">
+                      <Badge variant="secondary">Avocat Demandeur: {decision.avocatDemandeur || "-"}</Badge>
+                      <Badge variant="secondary">Avocat Défenseur: {decision.avocatDefenseur || "-"}</Badge>
+                    </div>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+
+          {totalPages > 1 && (
+            <div className="mt-6 flex justify-center sticky bottom-4 z-10">
+              <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
+            </div>
+          )}
+        </main>
       </div>
+
+      <DecisionModal
+        isOpen={!!selectedDecisionCode}
+        onClose={closeModal}
+        detailedDecision={detailedDecision}
+        loading={loadingDetails}
+        error={errorDetails}
+      />
     </div>
   );
 }

@@ -1,3 +1,4 @@
+// src/app/login/page.tsx
 "use client";
 
 import { useState, useEffect } from "react";
@@ -18,19 +19,20 @@ export default function LoginPage() {
   const dispatch = useAppDispatch();
   const router = useRouter();
 
-  const { loading, error, token } = useAppSelector((state) => state.auth);
+  // ✅ Utilisation du nouvel état isAuthenticated
+  const { loading, error, isAuthenticated } = useAppSelector((state) => state.auth);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     dispatch(loginUser({ email, password }));
   };
 
-  // ✅ Redirection automatique quand token est présent
+  // ✅ Redirection basée sur isAuthenticated, plus explicite
   useEffect(() => {
-    if (token) {
+    if (isAuthenticated) {
       router.push("/Espace-avocat");
     }
-  }, [token, router]);
+  }, [isAuthenticated, router]);
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-tr from-slate-900 via-slate-800/80 to-slate-950 p-4">
