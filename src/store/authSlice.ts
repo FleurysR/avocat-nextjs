@@ -10,7 +10,7 @@ interface AuthState {
   token: string | null;
   loading: boolean;
   error: string | null;
-  isAuthenticated: boolean; // ✅ Nouvel état pour l'authentification
+  isAuthenticated: boolean; //  Nouvel état pour l'authentification
 }
 
 interface LoginCredentials {
@@ -29,7 +29,7 @@ const initialState: AuthState = {
   token: getInitialToken(),
   loading: false,
   error: null,
-  isAuthenticated: !!getInitialToken(), // ✅ Détermine l'état initial
+  isAuthenticated: !!getInitialToken(), // Détermine l'état initial
 };
 
 export const loginUser = createAsyncThunk<
@@ -64,7 +64,7 @@ const authSlice = createSlice({
     logout(state) {
       state.token = null;
       state.error = null;
-      state.isAuthenticated = false; // ✅ Mise à jour de l'état
+      state.isAuthenticated = false; //  Mise à jour de l'état
       if (typeof window !== "undefined") {
         localStorage.removeItem("jwt_token");
         Cookies.remove("jwt_token");
@@ -72,7 +72,7 @@ const authSlice = createSlice({
     },
     setToken(state, action: PayloadAction<string>) {
       state.token = action.payload;
-      state.isAuthenticated = true; // ✅ Mise à jour de l'état
+      state.isAuthenticated = true; //  Mise à jour de l'état
       if (typeof window !== "undefined") {
         localStorage.setItem("jwt_token", action.payload);
         Cookies.set("jwt_token", action.payload, { expires: 7, secure: true, sameSite: 'strict' });
@@ -89,7 +89,7 @@ const authSlice = createSlice({
       .addCase(loginUser.fulfilled, (state, action: PayloadAction<string>) => {
         state.loading = false;
         state.token = action.payload;
-        state.isAuthenticated = true; // ✅ Indique le succès de la connexion
+        state.isAuthenticated = true; //  Indique le succès de la connexion
       })
       .addCase(loginUser.rejected, (state, action) => {
         state.loading = false;

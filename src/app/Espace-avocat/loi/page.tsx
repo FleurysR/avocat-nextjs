@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import { useState, useEffect, ReactNode } from "react";
 import { fetchLoiArticles } from "@/services/client-api";
@@ -10,11 +10,9 @@ import { SearchInput } from "@/components/context/SearchInput";
 
 const PAGE_SIZE = 10;
 
-// Fonction de mise en surbrillance des termes de recherche avec des types explicites.
+// Fonction de mise en surbrillance des termes de recherche
 const highlightText = (text: string, searchTerm: string): string | ReactNode[] => {
-  if (!searchTerm || !text) {
-    return text;
-  }
+  if (!searchTerm || !text) return text;
 
   const parts: (string | ReactNode)[] = [];
   const regex = new RegExp(`(${searchTerm})`, 'gi');
@@ -25,12 +23,10 @@ const highlightText = (text: string, searchTerm: string): string | ReactNode[] =
     const matchedText = match[0];
     const startIndex = match.index;
 
-    // Ajouter le texte avant le match
     if (startIndex > lastIndex) {
       parts.push(text.substring(lastIndex, startIndex));
     }
 
-    // Ajouter le texte du match en gras
     parts.push(
       <strong key={startIndex} className="font-bold text-indigo-700 dark:text-indigo-400">
         {matchedText}
@@ -40,7 +36,6 @@ const highlightText = (text: string, searchTerm: string): string | ReactNode[] =
     lastIndex = regex.lastIndex;
   }
 
-  // Ajouter le reste du texte
   if (lastIndex < text.length) {
     parts.push(text.substring(lastIndex));
   }
@@ -52,12 +47,21 @@ export default function LoiEtArticlesPage() {
   const [articles, setArticles] = useState<LoiArticle[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [totalItems, setTotalItems] = useState(0); 
+  const [totalItems, setTotalItems] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const { searchTerm } = useSearch();
 
+  // Gestion de l'expansion des articles
+  const [expandedArticles, setExpandedArticles] = useState<string[]>([]);
+  const toggleExpand = (code: string) => {
+    setExpandedArticles(prev =>
+      prev.includes(code) ? prev.filter(c => c !== code) : [...prev, code]
+    );
+  };
+
+  // Chargement des articles depuis l'API
   useEffect(() => {
     const loadData = async () => {
       setLoading(true);
@@ -106,22 +110,37 @@ export default function LoiEtArticlesPage() {
           <p className="text-gray-500 dark:text-gray-400">Aucun article trouvé.</p>
         ) : (
           <ul className="grid gap-6 md:grid-cols-1 lg:grid-cols-2">
-            {articles.map((article) => (
-              <li
-                key={article.code}
-                className="p-6 bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-gray-200 dark:border-slate-700 hover:border-indigo-500 transition-all transform hover:scale-105"
-              >
-                <h3 className="font-semibold text-md text-indigo-600 dark:text-indigo-300 mb-1">
-         {article.loi}
-      </h3>
-                <h2 className="font-semibold text-lg text-indigo-700 dark:text-indigo-400 mb-2">
-                 📄 Article n° {article.numero}
-                </h2>
-                <p className="text-gray-700 dark:text-gray-200 text-sm mb-2">
-                  {highlightText(article.content, searchTerm)}
-                </p>
-              </li>
-            ))}
+            {articles.map((article) => {
+              const isExpanded = expandedArticles.includes(article.code);
+              const truncatedContent = article.content.length > 150
+                ? article.content.slice(0, 150) + "..."
+                : article.content;
+
+              return (
+                <li
+                  key={article.code}
+                  className="p-6 bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-gray-200 dark:border-slate-700 hover:border-indigo-500 transition-all transform hover:scale-105"
+                >
+                  <h3 className="font-semibold text-md text-indigo-600 dark:text-indigo-300 mb-1">
+                    {article.loi}
+                  </h3>
+                  <h2 className="font-semibold text-lg text-indigo-700 dark:text-indigo-400 mb-2">
+                    📄 Article n° {article.numero}
+                  </h2>
+                  <p className="text-gray-700 dark:text-gray-200 text-sm mb-2">
+                    {highlightText(isExpanded ? article.content : truncatedContent, searchTerm)}
+                    {article.content.length > 150 && (
+                      <button
+                        onClick={() => toggleExpand(article.code)}
+                        className="ml-2 text-indigo-600 dark:text-indigo-400 font-semibold"
+                      >
+                        {isExpanded ? "Lire moins" : "Lire plus"}
+                      </button>
+                    )}
+                  </p>
+                </li>
+              );
+            })}
           </ul>
         )}
       </div>

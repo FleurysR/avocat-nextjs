@@ -8,27 +8,31 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { toast } from "sonner";
 
 interface NavbarProps {
   onToggle: () => void;
   isSidebarOpen: boolean;
-  onSearch?: (term: string) => void; // ✅ ajout de la prop onSearch
+  onSearch?: (term: string) => void;
 }
 
 export function Navbar({ onToggle, isSidebarOpen, onSearch }: NavbarProps) {
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
+  useEffect(() => setMounted(true), []);
   if (!mounted) return null;
+
+  const handleThemeChange = () => {
+    const newTheme = theme === "dark" ? "light" : "dark";
+    setTheme(newTheme);
+    toast.success(`Mode ${newTheme === "dark" ? "sombre" : "clair"} activé !`);
+  };
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-gray-200 dark:border-gray-700 bg-white/70 dark:bg-slate-950/70 backdrop-blur-lg text-gray-900 dark:text-gray-100 transition-colors duration-500">
       <div className="flex h-16 items-center px-4 sm:px-6 lg:px-8">
-        
+
         {/* Sidebar / Menu mobile */}
         <div className="flex items-center space-x-4">
           <Sheet>
@@ -48,19 +52,14 @@ export function Navbar({ onToggle, isSidebarOpen, onSearch }: NavbarProps) {
                 <Switch
                   id="dark-mode-mobile"
                   checked={theme === "dark"}
-                  onCheckedChange={() => setTheme(theme === "dark" ? "light" : "dark")}
+                  onCheckedChange={handleThemeChange}
                 />
               </div>
             </SheetContent>
           </Sheet>
 
           <div className="hidden md:flex items-center">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={onToggle}
-              className="w-10 h-10 rounded-full"
-            >
+            <Button variant="ghost" size="icon" onClick={onToggle} className="w-10 h-10 rounded-full">
               {isSidebarOpen ? <PanelLeftClose /> : <PanelRightOpen />}
             </Button>
           </div>
@@ -74,7 +73,7 @@ export function Navbar({ onToggle, isSidebarOpen, onSearch }: NavbarProps) {
               type="search"
               placeholder="Rechercher..."
               className="pl-10 w-full rounded-full bg-gray-200/50 dark:bg-gray-800/50"
-              onChange={(e) => onSearch?.(e.target.value)} // 
+              onChange={(e) => onSearch?.(e.target.value)}
             />
           </div>
         </div>
@@ -85,13 +84,9 @@ export function Navbar({ onToggle, isSidebarOpen, onSearch }: NavbarProps) {
           <Switch
             id="dark-mode-desktop"
             checked={theme === "dark"}
-            onCheckedChange={() => setTheme(theme === "dark" ? "light" : "dark")}
+            onCheckedChange={handleThemeChange}
           />
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-          >
+          <Button variant="ghost" size="icon" onClick={handleThemeChange}>
             {theme === "dark" ? <Moon /> : <Sun />}
           </Button>
         </div>

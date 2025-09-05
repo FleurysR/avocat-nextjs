@@ -3,7 +3,7 @@
 
 import { configureStore } from "@reduxjs/toolkit";
 import authReducer from "./authSlice";
-import searchReducer from "./searchSlice"; // <-- import du nouveau slice
+import searchReducer from "./searchSlice"; // <-- import du slice search
 
 export const store = configureStore({
   reducer: {
