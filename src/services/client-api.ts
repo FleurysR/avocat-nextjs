@@ -1,4 +1,3 @@
-// src/services/client-api.ts
 import serverApiClient from "./serverApiClient";
 import { 
     DecisionsApiResponse, 
@@ -8,8 +7,15 @@ import {
     AvocatsApiResponse,
     Juridiction, 
     JuridictionsApiResponse,
-    AvocatDetails
+    AvocatDetails,
+    Dossier
 } from "@/types";
+
+// Nouveau type pour la réponse de l'API des dossiers
+export interface DossiersApiResponse {
+  data: Dossier[];
+  totalCount: number;
+}
 
 /**
  * Décisions
@@ -71,4 +77,32 @@ export const fetchAvocats = async (query = '', limit = 10, page = 1) => {
 export const fetchAvocatDetails = async (code: string) => {
     const response = await serverApiClient.get<AvocatDetails>(`/avocats/${code}`);
     return response.data;
+};
+
+/**
+ * Dossiers
+ */
+// Correction : cette fonction va maintenant effectuer la pagination côté client
+// puisque l'API ne gère pas la pagination et renvoie tous les dossiers.
+export const fetchDossiers = async (query = '', limit = 10, page = 1): Promise<DossiersApiResponse> => {
+    
+    // L'API renvoie un simple tableau de Dossiers
+    const response = await serverApiClient.get<Dossier[]>("/dossiers/my/list");
+
+    // Filtrer les dossiers en fonction de la recherche
+    const filteredDossiers = response.data.filter(dossier => 
+      dossier.objet.toLowerCase().includes(query.toLowerCase()) ||
+      dossier.code.toLowerCase().includes(query.toLowerCase())
+    );
+    
+    // Déterminer les dossiers de la page actuelle
+    const startIndex = (page - 1) * limit;
+    const endIndex = startIndex + limit;
+    const paginatedDossiers = filteredDossiers.slice(startIndex, endIndex);
+
+    // Retourner les données paginées et le nombre total de dossiers filtrés
+    return {
+        data: paginatedDossiers,
+        totalCount: filteredDossiers.length,
+    };
 };

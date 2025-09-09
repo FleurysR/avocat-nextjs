@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 interface DecisionModalProps {
   isOpen: boolean;
   onClose: () => void;
-  detailedDecision: DecisionDetails | null;
+  detailedDecision: DecisionDetails | null; 
   loading: boolean;
   error: string | null;
 }

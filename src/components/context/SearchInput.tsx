@@ -1,16 +1,20 @@
-'use client';
+"use client";
 
-import { useSearch } from "@/components/context/SearchContext";
-import { Input } from "@/components/ui/input"; // Adaptez le chemin si nécessaire
+import { useSearch } from "./SearchContext";
+import { Input } from "@/components/ui/input";
 
-export function SearchInput() {
+interface SearchInputProps {
+  placeholder?: string; // ✅ optionnel
+}
+
+export function SearchInput({ placeholder = "Rechercher..." }: SearchInputProps) {
   const { searchTerm, setSearchTerm } = useSearch();
 
   return (
     <div className="mb-4">
       <Input
         type="search"
-        placeholder="Rechercher par nom, matricule, etc."
+        placeholder={placeholder}
         value={searchTerm}
         onChange={(e) => setSearchTerm(e.target.value)}
         className="w-full md:max-w-md bg-white dark:bg-slate-800"

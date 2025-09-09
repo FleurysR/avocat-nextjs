@@ -7,6 +7,7 @@ export const Toaster = (props: ToasterProps) => {
   return (
     <Sonner
       position="top-right"
+      closeButton // Ajout de cette propriété pour afficher le bouton de fermeture.
       toastOptions={{
         classNames: {
           toast: "rounded-xl border p-4 shadow-lg border-gray-200 bg-white text-black dark:border-gray-700 dark:bg-gray-800 dark:text-white",

@@ -156,3 +156,8 @@ export interface JuridictionsApiResponse {
   totalItems: number;
   member: Juridiction[];
 }
+export interface Dossier {
+    code: string;
+    createdAt: string;
+    objet: string;
+}
