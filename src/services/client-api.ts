@@ -8,7 +8,8 @@ import {
     Juridiction, 
     JuridictionsApiResponse,
     AvocatDetails,
-    Dossier
+    Dossier,
+    DossierDetails // Ajout de l'import pour le type DossierDetails
 } from "@/types";
 
 // Nouveau type pour la réponse de l'API des dossiers
@@ -105,4 +106,10 @@ export const fetchDossiers = async (query = '', limit = 10, page = 1): Promise<D
         data: paginatedDossiers,
         totalCount: filteredDossiers.length,
     };
+};
+
+// Nouvelle fonction pour récupérer un dossier par son code
+export const fetchDossierByCode = async (code: string) => {
+    const response = await serverApiClient.get<DossierDetails>(`/dossiers/${code}`);
+    return response.data;
 };

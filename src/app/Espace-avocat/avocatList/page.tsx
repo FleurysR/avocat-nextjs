@@ -4,11 +4,14 @@ import { useState, useEffect, ReactNode } from "react";
 import { fetchAvocats, fetchAvocatDetails } from "@/services/client-api";
 import { Avocat, AvocatDetails, AvocatsApiResponse } from "@/types";
 import { useSearch } from "@/components/context/SearchContext";
+import { useDebounce } from "@/components/context/useDebounce";
 import { Pagination } from "@/components/Pagination";
 import { Spinner } from "@/components/ui/shadcn-io/spinner/index";
 import { Badge } from "@/components/ui/badge";
 import AvocatModal from "@/components/modals/AvocatModal";
 import { SearchInput } from "@/components/context/SearchInput";
+import { toast } from "sonner";
+import { FileText } from "lucide-react";
 
 const PAGE_SIZE = 10;
 
@@ -58,6 +61,7 @@ export default function AvocatsPage() {
   const [errorDetails, setErrorDetails] = useState<string | null>(null);
 
   const { searchTerm } = useSearch();
+  const debouncedSearch = useDebounce(searchTerm, 400);
 
   // Charger la liste des avocats
   useEffect(() => {
@@ -65,22 +69,25 @@ export default function AvocatsPage() {
       setLoading(true);
       setError(null);
       try {
-        const data: AvocatsApiResponse = await fetchAvocats(searchTerm, PAGE_SIZE, currentPage);
+        const data: AvocatsApiResponse = await fetchAvocats(debouncedSearch, PAGE_SIZE, currentPage);
         const fetchedAvocats = Array.isArray(data.member) ? data.member : [];
         setAvocats(fetchedAvocats);
         setTotalItems(data.totalItems || fetchedAvocats.length);
         setTotalPages(Math.ceil((data.totalItems || fetchedAvocats.length) / PAGE_SIZE));
       } catch (err: unknown) {
         setError("Erreur lors de la récupération des avocats.");
+        toast.error("Échec du chargement des avocats.");
       } finally {
         setLoading(false);
       }
     };
     loadAvocats();
-  }, [currentPage, searchTerm]);
+  }, [currentPage, debouncedSearch]);
 
   // Réinitialiser la page quand la recherche change
-  useEffect(() => setCurrentPage(1), [searchTerm]);
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [debouncedSearch]);
 
   // Charger les détails d'un avocat sélectionné
   useEffect(() => {
@@ -93,6 +100,7 @@ export default function AvocatsPage() {
         setDetailedAvocat(data);
       } catch (err: unknown) {
         setErrorDetails("Erreur lors de la récupération des détails.");
+        toast.error("Échec du chargement des détails de l'avocat.");
       } finally {
         setLoadingDetails(false);
       }
@@ -109,15 +117,16 @@ export default function AvocatsPage() {
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-900 text-gray-900 dark:text-gray-100 p-6">
       <div className="flex-none">
-        <h1 className="text-3xl font-bold mb-6 text-indigo-700 dark:text-indigo-400 border-b-2 border-indigo-500 pb-2">
+        <h1 className="text-3xl font-bold mb-6 text-indigo-700 dark:text-indigo-400 border-b-2 border-indigo-500 pb-2 flex items-center gap-2">
+          <FileText className="h-8 w-8" />
           ⚖️ Tous les Avocats
         </h1>
 
-        <SearchInput />
+        <SearchInput placeholder="Rechercher par nom, prénom ou téléphone..." />
 
-        {searchTerm && (
+        {debouncedSearch && (
           <p className="text-gray-700 dark:text-gray-300 mb-4">
-            Vous avez {totalItems} résultat(s) pour votre recherche.
+            {totalItems} résultat{totalItems > 1 ? "s" : ""} pour votre recherche.
           </p>
         )}
       </div>
@@ -140,12 +149,21 @@ export default function AvocatsPage() {
                   className="p-6 bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-gray-200 dark:border-slate-700 hover:shadow-xl transition-transform transform hover:-translate-y-1 cursor-pointer"
                 >
                   <h2 className="text-xl font-semibold text-indigo-700 dark:text-indigo-400 mb-2 truncate">
-                    {highlightText(avocat.nom, searchTerm)} {highlightText(avocat.prenoms, searchTerm)}
+                    {highlightText(avocat.nom, debouncedSearch)} {highlightText(avocat.prenoms, debouncedSearch)}
                   </h2>
 
                   <div className="flex flex-wrap gap-2 mb-2">
                     <Badge variant="secondary">Matricule: {avocat.matricule}</Badge>
                     <Badge variant="secondary">Ville: {avocat.ville}</Badge>
+                    <Badge variant="secondary">Genre: {avocat.genre.designation}</Badge>
+                    
+                    {/* MODIFICATION : Ajout des badges pour le district et la région */}
+                    {avocat.district && (
+                      <Badge variant="secondary">District: {avocat.district.designation}</Badge>
+                    )}
+                    {avocat.region && (
+                      <Badge variant="secondary">Région: {avocat.region.designation}</Badge>
+                    )}
                   </div>
 
                   <p className="text-gray-500 dark:text-gray-400 text-sm">

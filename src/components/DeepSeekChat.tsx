@@ -1,18 +1,15 @@
 "use client"; // Indique à Next.js que ce composant est un composant client (utilisant le state, les hooks, etc.)
-
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { motion, AnimatePresence } from "framer-motion";
-
 // Définit le type pour un message, avec son rôle et son contenu
 type Message = {
   role: "system" | "user" | "assistant";
   content: string;
-};
-
+}
 // Composant principal de la conversation
 export default function DeepSeekChat() {
   // État pour stocker la liste des messages dans la conversation
@@ -23,12 +20,10 @@ export default function DeepSeekChat() {
   const [loading, setLoading] = useState(false);
   // État pour stocker un message d'erreur si la requête échoue
   const [error, setError] = useState("");
-
   // Fonction asynchrone pour envoyer le message à l'API
   const sendMessage = async () => {
     // Ne fait rien si l'input est vide
     if (!input.trim()) return;
-
     // Crée une nouvelle liste de messages en ajoutant le message de l'utilisateur
     const newMessages: Message[] = [...messages, { role: "user", content: input }];
     // Met à jour l'état des messages
@@ -39,7 +34,6 @@ export default function DeepSeekChat() {
     setLoading(true);
     // Réinitialise l'erreur
     setError("");
-
     try {
       // Envoie une requête POST à la route /api/deepseek
       const res = await fetch("/api/deepseek", {
@@ -48,15 +42,12 @@ export default function DeepSeekChat() {
         // Envoie les messages actuels au format JSON
         body: JSON.stringify({ messages: newMessages }),
       });
-
       // Analyse la réponse JSON de l'API
       const data = await res.json();
-
       // Si la réponse n'est pas OK, lance une erreur
       if (!res.ok) {
         throw new Error(data.error || "Erreur inconnue");
       }
-
       // Met à jour l'état en ajoutant le message de l'assistant
       setMessages((prev) => [
         ...prev,

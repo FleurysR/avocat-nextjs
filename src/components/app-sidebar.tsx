@@ -68,7 +68,7 @@ export default function AppSidebar({ isOpen, onToggle }: AppSidebarProps) {
               </span>
             </div>
             {/* Ligne stylisée en dessous */}
-            <div className="w-full h-0.5 bg-gray-400 dark:bg-gray-500 mt-2 rounded-full"></div>
+            {/* <div className="w-full h-0.5 bg-gray-400 dark:bg-gray-500 mt-2 rounded-full"></div> */}
           </div>
         </div>
 
