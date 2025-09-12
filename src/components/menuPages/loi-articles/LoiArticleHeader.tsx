@@ -1,25 +1,23 @@
+// src/components/menuPages/loi-articles/LoiArticleHeader.tsx
 
 "use client";
 
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
-import { SearchIcon, FileText, List, LayoutGrid } from "lucide-react";
+import { SearchIcon, FileText, List } from "lucide-react"; // Supprimez LayoutGrid
 
 interface LoiArticleHeaderProps {
   localSearch: string;
   onSearchChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  viewMode: "card" | "list";
-  onViewModeChange: (mode: "card" | "list") => void;
+  // viewMode et onViewModeChange ne sont plus nécessaires
 }
 
 export function LoiArticleHeader({
   localSearch,
   onSearchChange,
-  viewMode,
-  onViewModeChange,
 }: LoiArticleHeaderProps) {
   return (
-    <header className="pb-6 border-b border-indigo-500 flex flex-col sm:flex-row justify-between items-center mb-6">
+    <header className="sticky top-0 z-50 bg-white dark:bg-slate-900 pb-6 border-b border-indigo-500 flex flex-col sm:flex-row justify-between items-center mb-6">
       <div className="flex items-center space-x-4 mb-4 sm:mb-0">
         <div className="bg-indigo-600 dark:bg-indigo-400 p-3 rounded-full">
           <FileText className="h-6 w-6 text-white dark:text-slate-900" />
@@ -40,29 +38,16 @@ export function LoiArticleHeader({
           />
         </div>
         <div className="flex items-center space-x-2 bg-gray-100 dark:bg-slate-800 p-1 rounded-xl shadow-inner">
+          {/* Supprimez le bouton pour la vue "card" */}
           <button
-            onClick={() => onViewModeChange("card")}
+            onClick={() => {}} // Laissez une fonction vide si vous voulez garder le bouton "list" pour l'instant
             className={cn(
               "p-2 rounded-lg transition-colors duration-200",
-              viewMode === "card"
-                ? "bg-indigo-600 text-white shadow-md"
-                : "text-gray-500 hover:text-indigo-600"
-            )}
-            aria-label="Vue par cartes"
-          >
-            <LayoutGrid className="h-5 w-5" />
-          </button>
-          <button
-            onClick={() => onViewModeChange("list")}
-            className={cn(
-              "p-2 rounded-lg transition-colors duration-200",
-              viewMode === "list"
-                ? "bg-indigo-600 text-white shadow-md"
-                : "text-gray-500 hover:text-indigo-600"
+              "bg-indigo-600 text-white shadow-md" // La vue par défaut est "list" maintenant
             )}
             aria-label="Vue par liste"
           >
-            <List className="h-5 w-5" />
+            {/* <List className="h-5 w-5" /> */}
           </button>
         </div>
       </div>

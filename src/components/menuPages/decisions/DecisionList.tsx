@@ -1,4 +1,3 @@
-// src/components/decisions/DecisionList.tsx
 import { Decision } from "@/types";
 import { DecisionCard } from "./DecisionCard";
 import { DecisionTable } from "./DecisionTable";

@@ -6,6 +6,9 @@ import { DossierDetails, DossierDecision, DossierLoiArticle } from "@/types";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale/fr";
 import { Spinner } from "@/components/ui/shadcn-io/spinner";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
+import { FaEdit } from "react-icons/fa";
 
 interface DossierModalProps {
   isOpen: boolean;
@@ -59,21 +62,27 @@ export default function DossierModal({
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto bg-gray-100 dark:bg-slate-900">
-        {/*
-          Le DialogHeader et le DialogTitle sont maintenant toujours rendus pour l'accessibilité.
-          Le contenu du titre et de la description est mis à jour dynamiquement.
-        */}
         <DialogHeader className="text-left">
-          <DialogTitle className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-            {loading && "Chargement du dossier..."}
-            {error && "Erreur de chargement"}
-            {!loading && !error && detailedDossier && `Dossier: ${detailedDossier.objet}`}
-          </DialogTitle>
-          <DialogDescription className="mt-2 text-gray-500 dark:text-gray-400">
-            {loading && "Veuillez patienter pendant le chargement des informations."}
-            {error && "Une erreur est survenue lors de la récupération des détails."}
-            {!loading && !error && detailedDossier && `Informations détaillées sur le dossier ${detailedDossier.code}`}
-          </DialogDescription>
+            <div className="flex justify-between items-center">
+                <DialogTitle className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                    {loading && "Chargement du dossier..."}
+                    {error && "Erreur de chargement"}
+                    {!loading && !error && detailedDossier && `Dossier: ${detailedDossier.objet}`}
+                </DialogTitle>
+                {/* 🚀 Bouton de modification */}
+                {!loading && !error && detailedDossier && (
+                    <Link href={`/Espace-avocat/Dossier/Modifier/${detailedDossier.code}`} passHref>
+                        <Button variant="ghost" className="h-8 w-8 p-0" title="Modifier le dossier">
+                            <FaEdit className="h-5 w-5 text-gray-500 dark:text-gray-400" />
+                        </Button>
+                    </Link>
+                )}
+            </div>
+            <DialogDescription className="mt-2 text-gray-500 dark:text-gray-400">
+                {loading && "Veuillez patienter pendant le chargement des informations."}
+                {error && "Une erreur est survenue lors de la récupération des détails."}
+                {!loading && !error && detailedDossier && `Informations détaillées sur le dossier ${detailedDossier.code}`}
+            </DialogDescription>
         </DialogHeader>
 
         {loading && (
@@ -91,7 +100,7 @@ export default function DossierModal({
         {!loading && !error && detailedDossier && (
           <div className="mt-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {renderListItem("Code", detailedDossier.code)}
+              {/* {renderListItem("Code", detailedDossier.code)} */}
               {renderListItem("Matière", detailedDossier.matiere)}
               {renderListItem("Créé le", format(new Date(detailedDossier.createdAt), "dd MMMM yyyy", { locale: fr }))}
               {renderListItem("Juridiction", detailedDossier.juridiction?.designation)}

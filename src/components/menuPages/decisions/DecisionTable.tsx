@@ -1,4 +1,3 @@
-// src/components/decisions/DecisionTable.tsx
 import { Decision } from "@/types";
 import { highlightText } from "../../utils/highlightText";
 import { format } from "date-fns";
@@ -14,7 +13,7 @@ export function DecisionTable({ decisions, onSelect, searchTerm }: DecisionTable
   return (
     <div className="overflow-x-auto rounded-xl shadow-lg border border-gray-200 dark:border-slate-700">
       <table className="w-full text-left text-sm text-gray-500 dark:text-gray-400">
-        <thead className="text-xs text-gray-700 uppercase bg-gray-100 dark:bg-slate-700 dark:text-gray-300">
+        <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-slate-800 dark:text-gray-300">
           <tr>
             <th scope="col" className="px-6 py-3 font-semibold text-gray-900 dark:text-gray-100">Objet</th>
             <th scope="col" className="px-6 py-3 font-semibold text-gray-900 dark:text-gray-100">Numéro Dossier</th>
@@ -24,11 +23,16 @@ export function DecisionTable({ decisions, onSelect, searchTerm }: DecisionTable
           </tr>
         </thead>
         <tbody>
-          {decisions.map((decision) => (
+          {decisions.map((decision, index) => (
             <tr
               key={decision.code}
               onClick={() => onSelect(decision.code)}
-              className="bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-700/50 cursor-pointer transition-colors duration-200"
+              className={`
+                bg-white dark:bg-slate-800 border-b border-gray-100 dark:border-slate-700
+                hover:bg-gray-100 dark:hover:bg-slate-700/50 cursor-pointer
+                transition-colors duration-200
+                ${index % 2 === 0 ? "bg-white dark:bg-slate-800" : "bg-gray-50 dark:bg-slate-700/50"}
+              `}
             >
               <td className="px-6 py-4 font-medium text-gray-900 dark:text-gray-100 max-w-xs line-clamp-2">
                 {highlightText(decision.objet ?? '', searchTerm)}

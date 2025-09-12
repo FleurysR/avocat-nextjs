@@ -9,13 +9,27 @@ import {
     JuridictionsApiResponse,
     AvocatDetails,
     Dossier,
-    DossierDetails // Ajout de l'import pour le type DossierDetails
+    DossierDetails,
+    NewDossierData, // 🚀 Import the NewDossierData type
 } from "@/types";
 
 // Nouveau type pour la réponse de l'API des dossiers
 export interface DossiersApiResponse {
   data: Dossier[];
   totalCount: number;
+}
+
+// 🚀 Nouveau type pour Chambre Juridique
+export interface ChambreJuridique {
+  code: string;
+  designation: string;
+  description: string;
+}
+
+// 🚀 Nouveau type pour la réponse de l'API des chambres juridiques
+export interface ChambresJuridiquesApiResponse {
+  totalItems: number;
+  member: ChambreJuridique[];
 }
 
 /**
@@ -56,20 +70,26 @@ export const fetchLoiArticles = async (query = '', limit = 10, offset = 0) => {
 export const fetchJuridictions = async (query = '', limit = 10, page = 1) => {
   const offset = (page - 1) * limit;
   const params: Record<string, string | number> = { limit, offset };
-  if (query) params.query = query; // backend doit gérer ce paramètre
+  if (query) params.query = query;
 
   const response = await serverApiClient.get<JuridictionsApiResponse>("/juridictions", { params });
   return response.data;
+};
+
+// 🚀 Nouvelle fonction pour récupérer les chambres juridiques
+export const fetchChambresJuridiques = async () => {
+    const response = await serverApiClient.get<ChambresJuridiquesApiResponse>("/chambres-juridiques");
+    // Assurez-vous que le chemin est correct selon votre API
+    return response.data.member;
 };
 
 /**
  * Avocats
  */
 export const fetchAvocats = async (query = '', limit = 10, page = 1) => {
-    // Calculer l'offset à partir de la page pour la pagination
     const offset = (page - 1) * limit;
     const params: Record<string, string | number> = { limit, offset };
-    if (query) params.query = query; // Assurez-vous que le backend attend "query"
+    if (query) params.query = query;
 
     const response = await serverApiClient.get<AvocatsApiResponse>("/avocats", { params });
     return response.data;
@@ -83,33 +103,36 @@ export const fetchAvocatDetails = async (code: string) => {
 /**
  * Dossiers
  */
-// Correction : cette fonction va maintenant effectuer la pagination côté client
-// puisque l'API ne gère pas la pagination et renvoie tous les dossiers.
 export const fetchDossiers = async (query = '', limit = 10, page = 1): Promise<DossiersApiResponse> => {
-    
-    // L'API renvoie un simple tableau de Dossiers
     const response = await serverApiClient.get<Dossier[]>("/dossiers/my/list");
 
-    // Filtrer les dossiers en fonction de la recherche
     const filteredDossiers = response.data.filter(dossier => 
       dossier.objet.toLowerCase().includes(query.toLowerCase()) ||
       dossier.code.toLowerCase().includes(query.toLowerCase())
     );
     
-    // Déterminer les dossiers de la page actuelle
     const startIndex = (page - 1) * limit;
     const endIndex = startIndex + limit;
     const paginatedDossiers = filteredDossiers.slice(startIndex, endIndex);
 
-    // Retourner les données paginées et le nombre total de dossiers filtrés
     return {
         data: paginatedDossiers,
         totalCount: filteredDossiers.length,
     };
 };
 
-// Nouvelle fonction pour récupérer un dossier par son code
 export const fetchDossierByCode = async (code: string) => {
     const response = await serverApiClient.get<DossierDetails>(`/dossiers/${code}`);
     return response.data;
+};
+
+// 🚀 Nouvelle fonction pour la création d'un dossier
+export const createDossier = async (dossierData: NewDossierData): Promise<DossierDetails> => {
+    try {
+        const response = await serverApiClient.post<DossierDetails>("/api/dossiers/create-dossier", dossierData);
+        return response.data;
+    } catch (error) {
+        console.error("Erreur lors de la création du dossier:", error);
+        throw error;
+    }
 };

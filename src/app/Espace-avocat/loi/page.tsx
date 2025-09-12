@@ -13,58 +13,62 @@ import { LoiArticleList } from "@/components/menuPages/loi-articles/LoiArticleLi
 import { LoiArticleHeader } from "@/components/menuPages/loi-articles/LoiArticleHeader";
 
 export default function LoiEtArticlesPage() {
-  const { searchTerm, setSearchTerm } = useSearch(); // Utilisez setSearchTerm si nécessaire
+  const { searchTerm, setSearchTerm } = useSearch();
   const [currentPage, setCurrentPage] = useState(1);
-  const [viewMode, setViewMode] = useState<"card" | "list">("card"); // État pour le mode de vue
+  // Supprimez la ligne suivante
+  // const [viewMode, setViewMode] = useState<"card" | "list">("card");
 
-  // Utilise le hook personnalisé pour la logique de la page
   const { articles, totalPages, totalItems, loading, error } = useLoiArticles(searchTerm, currentPage);
 
-  // Réinitialiser la page si la recherche change
   useEffect(() => setCurrentPage(1), [searchTerm]);
 
   return (
-    <div className="p-6 max-w-5xl mx-auto">
-      <LoiArticleHeader
-        localSearch={searchTerm}
-        onSearchChange={(e) => setSearchTerm(e.target.value)}
-        viewMode={viewMode}
-        onViewModeChange={setViewMode}
-      />
-
-      {searchTerm && totalItems > 0 && (
-        <p className="mb-6 text-gray-700 dark:text-gray-300 text-center">
-          {totalItems} résultat{totalItems > 1 ? "s" : ""} trouvé{totalItems > 1 ? "s" : ""} pour « {searchTerm} »
-        </p>
-      )}
-
-      {loading ? (
-        <div className="flex justify-center py-20">
-          <Spinner variant="ring" size={48} />
-        </div>
-      ) : error ? (
-        <p className="text-center text-red-500 p-6 bg-red-100 dark:bg-red-900 rounded-xl shadow-inner">{error}</p>
-      ) : articles.length === 0 ? (
-        <p className="text-center text-gray-500 dark:text-gray-400">
-          Aucun article trouvé.
-        </p>
-      ) : (
-        <LoiArticleList
-          articles={articles}
-          viewMode={viewMode}
-          searchTerm={searchTerm}
+    <div className="flex flex-col h-screen">
+      <div className="p-6 max-w-5xl mx-auto w-full">
+        <LoiArticleHeader
+          localSearch={searchTerm}
+          onSearchChange={(e) => setSearchTerm(e.target.value)}
+          // Supprimez les props viewMode et onViewModeChange
         />
-      )}
+      </div>
 
-      {totalPages > 1 && (
-        <div className="mt-8 flex justify-center">
-          <Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={setCurrentPage}
-          />
+      <div className="flex-1 overflow-y-auto pb-6">
+        <div className="p-6 pt-0 max-w-5xl mx-auto">
+          {searchTerm && totalItems > 0 && (
+            <p className="mb-6 text-gray-700 dark:text-gray-300 text-center">
+              {totalItems} résultat{totalItems > 1 ? "s" : ""} trouvé{totalItems > 1 ? "s" : ""} pour « {searchTerm} »
+            </p>
+          )}
+
+          {loading ? (
+            <div className="flex justify-center py-20">
+              <Spinner variant="ring" size={48} />
+            </div>
+          ) : error ? (
+            <p className="text-center text-red-500 p-6 bg-red-100 dark:bg-red-900 rounded-xl shadow-inner">{error}</p>
+          ) : articles.length === 0 ? (
+            <p className="text-center text-gray-500 dark:text-gray-400">
+              Aucun article trouvé.
+            </p>
+          ) : (
+            <LoiArticleList
+              articles={articles}
+              // Supprimez la prop viewMode
+              searchTerm={searchTerm}
+            />
+          )}
+
+          {totalPages > 1 && (
+            <div className="mt-8 flex justify-center">
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={setCurrentPage}
+              />
+            </div>
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
 }

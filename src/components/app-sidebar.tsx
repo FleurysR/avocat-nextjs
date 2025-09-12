@@ -161,9 +161,9 @@ export default function AppSidebar({ isOpen, onToggle }: AppSidebarProps) {
                   Liste des dossiers
                 </Link>
                 <Link
-                  href="/Espace-avocat/dossiers/creer"
+                  href="/Espace-avocat/Dossier/AddDossierForm"
                   className={`flex items-center p-2 rounded-lg text-sm font-medium transition-colors gap-3 ${
-                    isActive("/Espace-avocat/dossiers/creer")
+                    isActive("/Espace-avocat/Dossier/AddDossierForm")
                       ? "bg-indigo-400 text-white dark:bg-indigo-500"
                       : "hover:bg-gray-200 dark:hover:bg-slate-800"
                   }`}

@@ -27,7 +27,7 @@ export default function DossiersListPage() {
   };
 
   return (
-    <div className="bg-slate-50 dark:bg-slate-950 min-h-screen text-slate-900 dark:text-slate-50 p-4 sm:p-8">
+    <div className="bg-slate-50 dark:bg-slate-900 min-h-screen text-slate-900 dark:text-slate-50 p-4 sm:p-8">
       <div className="container mx-auto max-w-screen-xl">
         <DossiersHeader
           localSearch={localSearch}
