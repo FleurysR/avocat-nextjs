@@ -11,14 +11,13 @@ export default function ToasterProvider({ children, ...props }: any) {
     <NextThemesProvider {...props}>
       {children}
       <Toaster 
-        // Passe le thème actuel à la notification pour qu'elle puisse s'adapter.
         theme={theme as "light" | "dark"} 
         richColors
         closeButton
         position="top-right"
-        // Ajoute des styles personnalisés pour les différents types de notifications
         toastOptions={{
           classNames: {
+            // Ces styles sont bons
             toast: "rounded-xl border p-4 shadow-lg border-gray-200 bg-white text-black dark:border-gray-700 dark:bg-gray-800 dark:text-white",
             error: "bg-red-500 text-white dark:bg-red-700",
             success: "bg-green-500 text-white dark:bg-green-700",
@@ -30,6 +29,8 @@ export default function ToasterProvider({ children, ...props }: any) {
           },
         }}
         icons={{
+          // 🚀 Utilisez une icône de base sans aucun style ni conteneur.
+          // Laissez le composant 'sonner' faire le travail de stylisation.
           close: <X className="h-4 w-4" />,
         }}
       />

@@ -1,4 +1,3 @@
-// src/services/serverApiClient.ts
 import axios from "axios";
 
 const serverApiClient = axios.create({

@@ -17,7 +17,6 @@ interface DossierModalProps {
   loading: boolean;
   error: string | null;
 }
-
 const renderListItem = (label: string, value: string | undefined | null) => {
     if (!value) return null;
     return (

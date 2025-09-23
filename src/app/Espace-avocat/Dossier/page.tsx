@@ -1,30 +1,19 @@
 // src/app/Espace-avocat/dossiers/page.tsx
-
 "use client";
 
 import { useState } from "react";
 import { Pagination } from "@/components/Pagination";
 import { Spinner } from "@/components/ui/shadcn-io/spinner/index";
-import DossierModal from "@/components/modals/DossierModal";
-
-// Importez les composants et hooks nécessaires
 import { useDossiers } from "@/hooks/dossiers/useDossiers";
-import { useDossierDetails } from "@/hooks/dossiers/useDossierDetails";
 import { DossierList } from "@/components/menuPages/dossiers/DossierList";
 import { DossiersHeader } from "@/components/menuPages/dossiers/DossiersHeader";
 
 export default function DossiersListPage() {
   const [currentPage, setPage] = useState(1);
   const [localSearch, setLocalSearch] = useState("");
-  const [selectedDossierCode, setSelectedDossierCode] = useState<string | null>(null);
-  const [viewMode, setViewMode] = useState<"card" | "list">("card"); // Nouvel état pour le mode de vue
+  const [viewMode, setViewMode] = useState<"card" | "list">("card"); // Mode de vue
 
   const { dossiers, loading, error, totalItems, totalPages } = useDossiers(localSearch, currentPage);
-  const { detailedDossier, loadingDetails, errorDetails } = useDossierDetails(selectedDossierCode);
-
-  const closeModal = () => {
-    setSelectedDossierCode(null);
-  };
 
   return (
     <div className="bg-slate-50 dark:bg-slate-900 min-h-screen text-slate-900 dark:text-slate-50 p-4 sm:p-8">
@@ -62,7 +51,6 @@ export default function DossiersListPage() {
             <DossierList
               dossiers={dossiers}
               viewMode={viewMode}
-              onSelect={setSelectedDossierCode}
               searchTerm={localSearch}
             />
           )}
@@ -74,13 +62,6 @@ export default function DossiersListPage() {
           )}
         </main>
       </div>
-      <DossierModal
-        isOpen={!!selectedDossierCode}
-        onClose={closeModal}
-        detailedDossier={detailedDossier}
-        loading={loadingDetails}
-        error={errorDetails}
-      />
     </div>
   );
 }

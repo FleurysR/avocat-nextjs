@@ -4,23 +4,170 @@ import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { useAppDispatch } from "@/store/hooks";
 import { logout } from "@/store/authSlice";
-import { LogOutIcon, Home, Folders, Gavel, Scale, Briefcase, ChevronRight, FilePlus } from "lucide-react";
+import {
+  LogOutIcon,
+  Home,
+  Folders,
+  Gavel,
+  Scale,
+  Briefcase,
+  ChevronRight,
+  FilePlus,
+  BookText,
+  BookOpen,
+} from "lucide-react";
 import { useState } from "react";
+
+interface NavItem {
+  href?: string;
+  name: string;
+  icon: React.ElementType;
+  subItems?: NavItem[];
+}
 
 interface AppSidebarProps {
   isOpen: boolean;
   onToggle: () => void;
 }
 
+const NavItemComponent = ({
+  item,
+  isActive,
+  isParentActive,
+  isOpen,
+  onToggle,
+}: {
+  item: NavItem;
+  isActive: (path: string) => boolean;
+  isParentActive: (path: string) => boolean;
+  isOpen: boolean;
+  onToggle: () => void;
+}) => {
+  const [isMenuOpen, setIsMenuOpen] = useState(
+    item.subItems ? isParentActive(item.href || "") : false
+  );
+
+  // Pour les menus déroulants
+  if (item.subItems) {
+    return (
+      <div className="flex flex-col">
+        <button
+          onClick={() => {
+            setIsMenuOpen(!isMenuOpen);
+            if (!isOpen) onToggle();
+          }}
+          // Pas de classe bg-indigo-500 pour le parent, seulement le hover
+          className={`group relative flex items-center p-3 rounded-lg text-sm font-medium transition-colors ${
+            isOpen ? "gap-3" : "justify-center"
+          } hover:bg-gray-200 dark:hover:bg-slate-800`}
+        >
+          <item.icon className="h-6 w-6" />
+          <span className={`flex-1 text-left ${!isOpen && "hidden"}`}>
+            {item.name}
+          </span>
+          <ChevronRight
+            className={`h-4 w-4 transition-transform ${
+              isMenuOpen && isOpen ? "rotate-90" : "rotate-0"
+            } ${!isOpen && "hidden"}`}
+          />
+          <Tooltip name={item.name} isOpen={isOpen} />
+        </button>
+        {isMenuOpen && isOpen && (
+          <div
+            className={`flex flex-col pl-6 mt-1 space-y-1 transition-all duration-300 ${
+              !isOpen && "hidden"
+            }`}
+          >
+            {item.subItems.map((subItem) => (
+              <Link
+                key={subItem.name}
+                href={subItem.href || ""}
+                className={`flex items-center p-2 rounded-lg text-sm font-medium transition-colors gap-3 ${
+                  isActive(subItem.href || "")
+                    ? "bg-indigo-400 text-white dark:bg-indigo-500"
+                    : "hover:bg-gray-200 dark:hover:bg-slate-800"
+                }`}
+              >
+                <subItem.icon className="h-5 w-5" />
+                {subItem.name}
+              </Link>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // Pour les liens simples
+  return (
+    <Link
+      href={item.href || ""}
+      className={`group relative flex items-center p-3 rounded-lg text-sm font-medium transition-colors ${
+        isOpen ? "gap-3" : "justify-center"
+      } ${
+        isActive(item.href || "")
+          ? "bg-indigo-500 text-white dark:bg-indigo-600"
+          : "hover:bg-gray-200 dark:hover:bg-slate-800"
+      }`}
+    >
+      <item.icon className="h-6 w-6" />
+      <span className={`${!isOpen && "hidden"}`}>{item.name}</span>
+      <Tooltip name={item.name} isOpen={isOpen} />
+    </Link>
+  );
+};
+
+const Tooltip = ({ name, isOpen }: { name: string; isOpen: boolean }) =>
+  !isOpen && (
+    <div className="absolute left-full ml-4 w-max px-3 py-1 bg-gray-800 text-white text-xs rounded-md shadow-lg opacity-0 transition-opacity duration-300 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-50">
+      {name}
+    </div>
+  );
+
 export default function AppSidebar({ isOpen, onToggle }: AppSidebarProps) {
   const router = useRouter();
   const dispatch = useAppDispatch();
   const pathname = usePathname();
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
-  // État pour gérer l'ouverture et la fermeture du sous-menu Dossier
-  const [isDossierMenuOpen, setIsDossierMenuOpen] = useState(
-    pathname.startsWith("/Espace-avocat/dossiers")
-  );
+
+  const navItems: NavItem[] = [
+    { href: "/Espace-avocat", name: "Accueil", icon: Home },
+    { href: "/Espace-avocat/avocatList", name: "Liste Des Avocat", icon: Folders },
+    { href: "/Espace-avocat/decisions", name: "Décision", icon: Gavel },
+    {
+      name: "Dossier",
+      icon: Folders,
+      subItems: [
+        {
+          href: "/Espace-avocat/Dossier",
+          name: "Liste des dossiers",
+          icon: Folders,
+        },
+        {
+          href: "/Espace-avocat/Dossier/AddDossierForm",
+          name: "Créer un nouveau dossier",
+          icon: FilePlus,
+        },
+      ],
+    },
+    { href: "/Espace-avocat/juridiction", name: "Juridiction", icon: Scale },
+    {
+      name: "Lois",
+      icon: BookText,
+      subItems: [
+        {
+          href: "/Espace-avocat/Lois/",
+          name: "Catégories de Lois",
+          icon: Folders,
+        },
+        {
+          href: "/Espace-avocat/loi/articles",
+          name: "Articles de Lois",
+          icon: BookOpen,
+        },
+      ],
+    },
+  ];
 
   const handleLogoutClick = () => {
     setIsLogoutModalOpen(true);
@@ -44,9 +191,8 @@ export default function AppSidebar({ isOpen, onToggle }: AppSidebarProps) {
       <div
         className={`fixed top-0 left-0 h-screen bg-white dark:bg-slate-900 text-gray-900 dark:text-gray-100 transition-all duration-500 ${
           isOpen ? "w-64" : "w-20"
-        } flex flex-col`}
+        } flex flex-col z-40`}
       >
-        {/* En-tête avec le logo et la ligne stylisée */}
         <div className="flex items-center h-16 p-4">
           <div
             className={`flex flex-col items-center gap-2 p-2 rounded-md transition-all duration-300 ${
@@ -54,11 +200,9 @@ export default function AppSidebar({ isOpen, onToggle }: AppSidebarProps) {
             }`}
           >
             <div className="flex items-center gap-2 w-full">
-              {/* Logo: Remplacé par une icône de mallette (Briefcase) */}
               <div className="w-10 h-10 flex items-center justify-center bg-indigo-600 rounded-full">
                 <Briefcase className="w-6 h-6 text-white" />
               </div>
-              {/* Nom de l'application */}
               <span
                 className={`text-sm font-semibold transition-opacity duration-300 ${
                   !isOpen && "opacity-0 hidden"
@@ -67,153 +211,31 @@ export default function AppSidebar({ isOpen, onToggle }: AppSidebarProps) {
                 Avocat-Expert
               </span>
             </div>
-            {/* Ligne stylisée en dessous */}
-            {/* <div className="w-full h-0.5 bg-gray-400 dark:bg-gray-500 mt-2 rounded-full"></div> */}
           </div>
         </div>
 
-        {/* Menu de navigation */}
         <nav className="flex flex-col flex-1 p-4 space-y-2">
-          {/* Accueil - Reste en haut */}
-          <Link
-            href="/Espace-avocat"
-            className={`flex items-center p-3 rounded-lg text-sm font-medium transition-colors ${
-              isOpen ? "gap-3" : "justify-center"
-            } ${
-              isActive("/Espace-avocat")
-                ? "bg-indigo-500 text-white dark:bg-indigo-600"
-                : "hover:bg-gray-200 dark:hover:bg-slate-800"
-            }`}
-          >
-            <Home className="h-6 w-6" />
-            <span className={`${!isOpen && "hidden"}`}>Accueil</span>
-          </Link>
+          {navItems.map((item) => (
+            <NavItemComponent
+              key={item.name}
+              item={item}
+              isActive={isActive}
+              isParentActive={isParentActive}
+              isOpen={isOpen}
+              onToggle={onToggle}
+            />
+          ))}
 
-          {/* Menus classés par ordre alphabétique */}
-          <Link
-            href="/Espace-avocat/avocatList"
-            className={`flex items-center p-3 rounded-lg text-sm font-medium transition-colors ${
-              isOpen ? "gap-3" : "justify-center"
-            } ${
-              isActive("/Espace-avocat/avocatList")
-                ? "bg-indigo-500 text-white dark:bg-indigo-600"
-                : "hover:bg-gray-200 dark:hover:bg-slate-800"
-            }`}
-          >
-            <Folders className="h-6 w-6" />
-            <span className={`${!isOpen && "hidden"}`}>Liste Des Avocat</span>
-          </Link>
-          
-          <Link
-            href="/Espace-avocat/decision"
-            className={`flex items-center p-3 rounded-lg text-sm font-medium transition-colors ${
-              isOpen ? "gap-3" : "justify-center"
-            } ${
-              isActive("/Espace-avocat/decision")
-                ? "bg-indigo-500 text-white dark:bg-indigo-600"
-                : "hover:bg-gray-200 dark:hover:bg-slate-800"
-            }`}
-          >
-            <Gavel className="h-6 w-6" />
-            <span className={`${!isOpen && "hidden"}`}>Décision</span>
-          </Link>
-
-          {/* Nouveau menu déroulant "Dossier" */}
-          <div className="flex flex-col">
-            <button
-              onClick={() => {
-                setIsDossierMenuOpen(!isDossierMenuOpen);
-                if (!isOpen) onToggle(); // Ouvre la barre latérale si elle est fermée
-              }}
-              className={`flex items-center p-3 rounded-lg text-sm font-medium transition-colors ${
-                isOpen ? "gap-3" : "justify-center"
-              } ${
-                isParentActive("/Espace-avocat/dossiers")
-                  ? "bg-indigo-500 text-white dark:bg-indigo-600"
-                  : "hover:bg-gray-200 dark:hover:bg-slate-800"
-              }`}
-            >
-              <Folders className="h-6 w-6" />
-              <span className={`flex-1 text-left ${!isOpen && "hidden"}`}>
-                Dossier
-              </span>
-              <ChevronRight
-                className={`h-4 w-4 transition-transform ${
-                  isDossierMenuOpen && isOpen ? "rotate-90" : "rotate-0"
-                } ${!isOpen && "hidden"}`}
-              />
-            </button>
-            {isDossierMenuOpen && (
-              <div
-                className={`flex flex-col pl-6 mt-1 space-y-1 transition-all duration-300 ${
-                  !isOpen && "hidden"
-                }`}
-              >
-                <Link
-                  href="/Espace-avocat/Dossier"
-                  className={`flex items-center p-2 rounded-lg text-sm font-medium transition-colors gap-3 ${
-                    isActive("/Espace-avocat/Dossier")
-                      ? "bg-indigo-400 text-white dark:bg-indigo-500"
-                      : "hover:bg-gray-200 dark:hover:bg-slate-800"
-                  }`}
-                >
-                  <Folders className="h-5 w-5" />
-                  Liste des dossiers
-                </Link>
-                <Link
-                  href="/Espace-avocat/Dossier/AddDossierForm"
-                  className={`flex items-center p-2 rounded-lg text-sm font-medium transition-colors gap-3 ${
-                    isActive("/Espace-avocat/Dossier/AddDossierForm")
-                      ? "bg-indigo-400 text-white dark:bg-indigo-500"
-                      : "hover:bg-gray-200 dark:hover:bg-slate-800"
-                  }`}
-                >
-                  <FilePlus className="h-5 w-5" />
-                  Créer un nouveau dossier
-                </Link>
-              </div>
-            )}
-          </div>
-          
-          <Link
-            href="/Espace-avocat/juridiction"
-            className={`flex items-center p-3 rounded-lg text-sm font-medium transition-colors ${
-              isOpen ? "gap-3" : "justify-center"
-            } ${
-              isActive("/Espace-avocat/juridiction")
-                ? "bg-indigo-500 text-white dark:bg-indigo-600"
-                : "hover:bg-gray-200 dark:hover:bg-slate-800"
-            }`}
-          >
-            <Scale className="h-6 w-6" />
-            <span className={`${!isOpen && "hidden"}`}>Jirudiction</span>
-          </Link>
-
-          <Link
-            href="/Espace-avocat/loi"
-            className={`flex items-center p-3 rounded-lg text-sm font-medium transition-colors ${
-              isOpen ? "gap-3" : "justify-center"
-            } ${
-              isActive("/Espace-avocat/loi")
-                ? "bg-indigo-500 text-white dark:bg-indigo-600"
-                : "hover:bg-gray-200 dark:hover:bg-slate-800"
-            }`}
-          >
-            <Scale className="h-6 w-6" />
-            <span className={`${!isOpen && "hidden"}`}>Lois & Articles</span>
-          </Link>
-
-
-          {/* Déconnexion */}
           <div className="mt-auto pt-4 border-t border-gray-200 dark:border-slate-700">
             <button
-              className={`flex items-center p-3 rounded-lg text-sm font-medium hover:bg-gray-200 dark:hover:bg-slate-800 transition-colors ${
+              className={`group relative flex items-center p-3 rounded-lg text-sm font-medium hover:bg-gray-200 dark:hover:bg-slate-800 transition-colors ${
                 isOpen ? "gap-3" : "justify-center"
               }`}
               onClick={handleLogoutClick}
             >
               <LogOutIcon className="h-6 w-6" />
               <span className={`${!isOpen && "hidden"}`}>Déconnexion</span>
+              <Tooltip name="Déconnexion" isOpen={isOpen} />
             </button>
           </div>
         </nav>

@@ -1,29 +1,24 @@
+// src/components/DecisionPage.tsx
 "use client";
 
 import React, { useState } from "react";
 import { DecisionDetails } from "@/types";
 import { Spinner } from "@/components/ui/shadcn-io/spinner/index";
 import { Badge } from "@/components/ui/badge";
-import { X, FileText, CalendarDays, Gavel, Users, Scale, Landmark, Tag } from "lucide-react";
+import { FileText, Gavel, Users, Landmark } from "lucide-react";
 
-interface DecisionModalProps {
-  isOpen: boolean;
-  onClose: () => void;
+interface DecisionPageProps {
   detailedDecision: DecisionDetails | null;
   loading: boolean;
   error: string | null;
 }
 
-export default function DecisionModal({
-  isOpen,
-  onClose,
+export default function DecisionPage({
   detailedDecision,
   loading,
   error,
-}: DecisionModalProps) {
+}: DecisionPageProps) {
   const [activeTab, setActiveTab] = useState("general");
-
-  if (!isOpen) return null;
 
   const renderTabContent = () => {
     switch (activeTab) {
@@ -105,17 +100,8 @@ export default function DecisionModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-fadeIn">
-      <div className="relative bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto transform scale-95 transition-transform duration-300 ease-out">
-        {/* Close button */}
-        <button
-          onClick={onClose}
-          className="absolute top-4 right-4 text-gray-400 hover:text-red-500 transition-colors duration-200"
-          aria-label="Fermer le modal"
-        >
-          <X size={24} />
-        </button>
-
+    <div className="p-4 sm:p-8 max-w-5xl mx-auto">
+      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl p-4 sm:p-8">
         {loading ? (
           <div className="flex justify-center py-20">
             <Spinner variant="ring" size={48} className="text-indigo-600 dark:text-indigo-400" />
@@ -125,8 +111,7 @@ export default function DecisionModal({
             <p className="font-medium text-lg">{error}</p>
           </div>
         ) : detailedDecision ? (
-          <div className="p-8 space-y-6">
-            {/* Header and Object */}
+          <div className="space-y-6">
             <div className="pb-4 border-b border-gray-200 dark:border-slate-700">
               <h2 className="text-3xl font-bold text-indigo-700 dark:text-indigo-400 flex items-center gap-2 mb-2">
                 <FileText className="w-7 h-7" />
@@ -137,7 +122,6 @@ export default function DecisionModal({
               </p>
             </div>
 
-            {/* Tab Navigation */}
             <div className="flex border-b border-gray-200 dark:border-slate-700">
               <button
                 className={`py-2 px-4 text-sm font-medium transition-colors duration-200 ${
@@ -171,7 +155,6 @@ export default function DecisionModal({
               </button>
             </div>
 
-            {/* Tab Content */}
             <div className="pt-4">
               {renderTabContent()}
             </div>

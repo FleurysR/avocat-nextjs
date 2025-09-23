@@ -1,19 +1,17 @@
-// src/app/Espace-avocat/loi-et-articles/page.tsx
-
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useAvocatsData } from "@/hooks/avocats/useAvocatsData";
-import { useAvocatModal } from "@/hooks/avocats/useAvocatModal";
 import { AvocatsGrid } from "@/components/menuPages/avocats/AvocatsGrid";
 import { Pagination } from "@/components/Pagination";
 import { Spinner } from "@/components/ui/shadcn-io/spinner/index";
-import AvocatModal from "@/components/modals/AvocatModal";
 import { SearchInput } from "@/components/context/SearchInput";
 import { FileText, LayoutGrid, List } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export default function AvocatsPage() {
+  const router = useRouter();
   const {
     avocats,
     currentPage,
@@ -23,29 +21,24 @@ export default function AvocatsPage() {
     loading,
     error,
     debouncedSearch,
+    sortField, // NOUVEAU: Récupère le champ de tri du hook
+    sortOrder, // NOUVEAU: Récupère l'ordre de tri du hook
+    onSortChange, // NOUVEAU: Récupère la fonction de tri du hook
   } = useAvocatsData();
 
-  const {
-    selectedAvocatCode,
-    detailedAvocat,
-    loadingDetails,
-    errorDetails,
-    openModal,
-    closeModal,
-  } = useAvocatModal();
-
   const [viewMode, setViewMode] = useState<"card" | "list">("card");
+  const handleAvocatClick = (code: string) => {
+    router.push(`/Espace-avocat/avocatList/${code}`);
+  };
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-900 text-gray-900 dark:text-gray-100 p-6">
-      {/* 🚀 En-tête amélioré pour un alignement et un design parfaits */}
       <header className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 pb-4 border-b-2 border-indigo-500">
         <h1 className="text-3xl font-bold text-indigo-700 dark:text-indigo-400 flex items-center gap-2 mb-4 sm:mb-0">
           <FileText className="h-8 w-8" />
           ⚖️ Tous les Avocats
         </h1>
         <div className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto">
-          {/* Le composant SearchInput gère maintenant sa propre largeur */}
           <SearchInput placeholder="Rechercher par nom, prénom..." className="w-full sm:w-auto md:w-[250px]" />
           <div className="flex items-center space-x-2 bg-gray-100 dark:bg-slate-800 p-1 rounded-xl shadow-inner flex-shrink-0">
             <button
@@ -75,13 +68,11 @@ export default function AvocatsPage() {
           </div>
         </div>
       </header>
-
       {debouncedSearch && (
         <p className="text-gray-700 dark:text-gray-300 mb-4">
           {totalItems} résultat{totalItems > 1 ? "s" : ""} pour votre recherche.
         </p>
       )}
-
       <div className="flex-1 overflow-auto">
         {loading ? (
           <div className="flex items-center justify-center min-h-[300px]">
@@ -93,8 +84,11 @@ export default function AvocatsPage() {
           <AvocatsGrid
             avocats={avocats}
             searchTerm={debouncedSearch}
-            onAvocatClick={openModal}
+            onAvocatClick={handleAvocatClick}
             viewMode={viewMode}
+            sortField={sortField} // NOUVEAU: Passe la nouvelle propriété
+            sortOrder={sortOrder} // NOUVEAU: Passe la nouvelle propriété
+            onSortChange={onSortChange} // NOUVEAU: Passe la nouvelle propriété
           />
         )}
       </div>
@@ -108,14 +102,6 @@ export default function AvocatsPage() {
           />
         </div>
       )}
-
-      <AvocatModal
-        isOpen={!!selectedAvocatCode}
-        onClose={closeModal}
-        detailedAvocat={detailedAvocat}
-        loading={loadingDetails}
-        error={errorDetails}
-      />
     </div>
   );
 }

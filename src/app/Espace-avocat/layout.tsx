@@ -1,13 +1,16 @@
+// src/app/Espace-avocat/layout.tsx
+
 "use client";
 
 import { ReactNode, useState } from "react";
 import { Navbar } from "@/components/ui/Navbar";
 import AppSidebar from "@/components/app-sidebar";
 import { SearchProvider } from "@/components/context/SearchContext";
-import { GlobalSearchProvider } from "@/components/context/GlobalSearchContext";
-import ToasterProvider from "@/components/ProviderToaster"; // Importation du ToasterProvider
+import ToasterProvider from "@/components/ProviderToaster";
 
-interface LayoutProps { children: ReactNode }
+interface LayoutProps {
+  children: ReactNode;
+}
 
 function AppLayoutContent({ children }: { children: ReactNode }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -30,14 +33,11 @@ function AppLayoutContent({ children }: { children: ReactNode }) {
 
 export default function EspaceAvocatLayout({ children }: LayoutProps) {
   return (
-    // Utilise le ToasterProvider pour envelopper l'application entière.
-    // Cela gère à la fois le thème et les notifications.
+    // Wrap your application with the correct providers
     <ToasterProvider attribute="class" defaultTheme="system" enableSystem>
-      <GlobalSearchProvider>
-        <SearchProvider>
-          <AppLayoutContent>{children}</AppLayoutContent>
-        </SearchProvider>
-      </GlobalSearchProvider>
+      <SearchProvider>
+        <AppLayoutContent>{children}</AppLayoutContent>
+      </SearchProvider>
     </ToasterProvider>
   );
 }

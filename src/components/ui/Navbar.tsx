@@ -1,3 +1,4 @@
+// src/components/ui/Navbar.tsx
 "use client";
 
 import {
@@ -11,12 +12,12 @@ import {
 import { useTheme } from "next-themes";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { toast } from "sonner";
-import { useGlobalSearch } from "@/components/context/GlobalSearchContext";
+// 🚀 Chemin d'importation corrigé
+import { SearchInput } from "../context/SearchInput"; 
 
 interface NavbarProps {
   onToggle: () => void;
@@ -25,10 +26,7 @@ interface NavbarProps {
 
 export function Navbar({ onToggle, isSidebarOpen }: NavbarProps) {
   const { theme, setTheme } = useTheme();
-  const { setGlobalSearch } = useGlobalSearch();
   const [mounted, setMounted] = useState(false);
-  // Ajout d'un état local pour la valeur du champ de recherche
-  const [inputValue, setInputValue] = useState("");
 
   useEffect(() => setMounted(true), []);
   if (!mounted) return null;
@@ -37,23 +35,9 @@ export function Navbar({ onToggle, isSidebarOpen }: NavbarProps) {
     const newTheme = checked ? "dark" : "light";
     try {
       setTheme(newTheme);
-      // Affiche une notification de succès si le changement de thème est effectué
       toast.success(`Mode ${newTheme === "dark" ? "sombre" : "clair"} activé !`);
     } catch (error) {
-      // En cas d'erreur, affiche une notification d'erreur
       toast.error("Échec du changement de thème. Veuillez réessayer.");
-    }
-  };
-
-  // Fonction pour déclencher la recherche globale
-  const handleSearch = () => {
-    setGlobalSearch(inputValue);
-  };
-
-  // Gère la touche 'Enter'
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      handleSearch();
     }
   };
 
@@ -117,28 +101,12 @@ export function Navbar({ onToggle, isSidebarOpen }: NavbarProps) {
           </div>
         </div>
 
-        {/* Barre de recherche globale */}
+        {/* Barre de recherche globale (simplifiée) */}
         <div className="flex-1 flex justify-center px-4 sm:px-6 lg:px-8">
-          <div className="relative flex items-center w-full max-w-sm">
-            <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500 dark:text-gray-400" />
-            <Input
-              type="search"
-              placeholder="Recherche globale..."
-              className="pl-10 w-full rounded-full bg-gray-200/50 dark:bg-slate-800/50 border-gray-300 dark:border-slate-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400"
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-              onKeyDown={handleKeyDown}
-            />
-            {/* Bouton de validation de la recherche */}
-            <Button
-              variant="default"
-              size="sm"
-              onClick={handleSearch}
-              className="ml-2 px-4 py-2 rounded-full shadow-md hover:bg-indigo-700 transition-colors duration-200"
-            >
-              Rechercher
-            </Button>
-          </div>
+          <SearchInput
+            placeholder="Rechercher avocat, loi, article ou décision..."
+            className="w-full"
+          />
         </div>
 
         {/* Contrôles thème */}

@@ -1,7 +1,20 @@
+// src/components/DecisionTable.tsx
+"use client";
+
 import { Decision } from "@/types";
 import { highlightText } from "../../utils/highlightText";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+
+// Importez les composants de shadcn/ui
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 interface DecisionTableProps {
   decisions: Decision[];
@@ -11,42 +24,44 @@ interface DecisionTableProps {
 
 export function DecisionTable({ decisions, onSelect, searchTerm }: DecisionTableProps) {
   return (
-    <div className="overflow-x-auto rounded-xl shadow-lg border border-gray-200 dark:border-slate-700">
-      <table className="w-full text-left text-sm text-gray-500 dark:text-gray-400">
-        <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-slate-800 dark:text-gray-300">
-          <tr>
-            <th scope="col" className="px-6 py-3 font-semibold text-gray-900 dark:text-gray-100">Objet</th>
-            <th scope="col" className="px-6 py-3 font-semibold text-gray-900 dark:text-gray-100">Numéro Dossier</th>
-            <th scope="col" className="px-6 py-3 font-semibold text-gray-900 dark:text-gray-100">Date</th>
-            <th scope="col" className="px-6 py-3 font-semibold text-gray-900 dark:text-gray-100">Demandeur</th>
-            <th scope="col" className="px-6 py-3 font-semibold text-gray-900 dark:text-gray-100">Défenseur</th>
-          </tr>
-        </thead>
-        <tbody>
-          {decisions.map((decision, index) => (
-            <tr
+    // Le conteneur donne un effet de "carte" avec des coins arrondis et une bordure
+    <div className="rounded-xl border shadow-lg overflow-hidden">
+      <Table>
+        {/* En-tête du tableau - Style plus pro avec les couleurs de shadcn/ui */}
+        <TableHeader className="bg-gray-50 dark:bg-slate-800">
+          <TableRow>
+            <TableHead className="w-[300px] font-bold text-gray-900 dark:text-gray-100">Objet</TableHead>
+            <TableHead className="w-[150px] font-bold text-gray-900 dark:text-gray-100">Numéro Dossier</TableHead>
+            <TableHead className="w-[120px] font-bold text-gray-900 dark:text-gray-100">Date</TableHead>
+            <TableHead className="font-bold text-gray-900 dark:text-gray-100">Demandeur</TableHead>
+            <TableHead className="font-bold text-gray-900 dark:text-gray-100">Défenseur</TableHead>
+          </TableRow>
+        </TableHeader>
+
+        {/* Corps du tableau */}
+        <TableBody>
+          {decisions.map((decision) => (
+            <TableRow
               key={decision.code}
               onClick={() => onSelect(decision.code)}
-              className={`
-                bg-white dark:bg-slate-800 border-b border-gray-100 dark:border-slate-700
-                hover:bg-gray-100 dark:hover:bg-slate-700/50 cursor-pointer
-                transition-colors duration-200
-                ${index % 2 === 0 ? "bg-white dark:bg-slate-800" : "bg-gray-50 dark:bg-slate-700/50"}
-              `}
+              className="cursor-pointer transition-colors hover:bg-gray-50/50 dark:hover:bg-slate-800/50"
             >
-              <td className="px-6 py-4 font-medium text-gray-900 dark:text-gray-100 max-w-xs line-clamp-2">
+              {/* Cellule "Objet" avec la mise en surbrillance de la recherche */}
+              <TableCell className="font-medium max-w-xs line-clamp-2">
                 {highlightText(decision.objet ?? '', searchTerm)}
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap">{decision.numeroDossier || "-"}</td>
-              <td className="px-6 py-4 whitespace-nowrap">
+              </TableCell>
+
+              {/* Cellules restantes */}
+              <TableCell>{decision.numeroDossier || "-"}</TableCell>
+              <TableCell>
                 {decision.decisionAt ? format(new Date(decision.decisionAt), "dd/MM/yyyy", { locale: fr }) : "-"}
-              </td>
-              <td className="px-6 py-4 whitespace-nowrap">{decision.avocatDemandeur || "-"}</td>
-              <td className="px-6 py-4 whitespace-nowrap">{decision.avocatDefenseur || "-"}</td>
-            </tr>
+              </TableCell>
+              <TableCell>{decision.avocatDemandeur || "-"}</TableCell>
+              <TableCell>{decision.avocatDefendeur || "-"}</TableCell>
+            </TableRow>
           ))}
-        </tbody>
-      </table>
+        </TableBody>
+      </Table>
     </div>
   );
 }

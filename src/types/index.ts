@@ -38,7 +38,7 @@ export interface District {
   "@type": "District";
   code: string;
   designation: string;
-  region: Region;
+  region: Region | string; // parfois Hydra renvoie juste l'IRI "/api/regions/53"
 }
 
 export interface Commune {
@@ -46,9 +46,8 @@ export interface Commune {
   "@type": "Commune";
   code: string;
   designation: string;
-  district: District;
+  district: District | string;
 }
-
 // ==============
 // Décisions
 // ==============
@@ -56,7 +55,7 @@ export interface Decision {
   code: string;
   objet?: string;
   avocatDemandeur?: string;
-  avocatDefenseur?: string;
+  avocatDefendeur?: string;
   decisionAt?: string;
   numeroDossier?: string;
 }
@@ -92,6 +91,36 @@ export interface DecisionDetails {
   anonymousContent: string;
   contextualTerms: string[];
 }
+/**
+ * Décisions
+ */
+export interface DecisionsFilters {
+  solution_code?: string;
+  nature_code?: string;
+  juridiction_code?: string;
+  numero?: string;
+  numeroDossier?: string;
+  avocatDemandeur?: string;
+  dossier?: string;
+  // Ajoutez ici tous les champs que vous souhaitez utiliser comme filtres
+}
+// 🚀 Nouveau type pour Chambre Juridique
+export interface ChambreJuridique {
+  code: string;
+  designation: string;
+  description: string;
+}
+
+// 🚀 Nouveau type pour la réponse de l'API des chambres juridiques
+export interface ChambresJuridiquesApiResponse {
+  totalItems: number;
+  member: ChambreJuridique[];
+}
+// Nouveau type pour la réponse de l'API des dossiers
+export interface DossiersApiResponse {
+  data: Dossier[];
+  totalCount: number;
+}
 
 // ==============
 // Avocats
@@ -124,6 +153,8 @@ export interface AvocatsApiResponse {
   member: Avocat[];
 }
 
+// 🚀 Le type final pour les détails de l'avocat,
+// après que la fonction d'API a résolu toutes les relations.
 export interface AvocatDetails {
   "@id": string;
   "@type": "Avocat";
@@ -131,8 +162,7 @@ export interface AvocatDetails {
   code: string;
   matricule: string;
   inscriptionAt: string;
-  genre: Choice;
-  designation: string;
+  genre: Choice | null;
   ville: string;
   createdAt: string;
   nom: string;
@@ -141,11 +171,13 @@ export interface AvocatDetails {
   autrePhone: string[];
   email: string;
   yearExercice: number;
-  region: Region;
-  district: District;
-  commune: Commune;
+  region: Region | null;
+  district: District | null;
+  commune: Commune | null;
+  lastActivityAt: string | null;
+  biographie?: string; // 👈 Add the biographie field
+  specialites?: Choice[]; // 👈 Add the specialites field
 }
-
 // ==============
 // Lois
 // ==============
@@ -166,12 +198,15 @@ export interface LoiArticle {
   numero: string;
   content: string;
   code: string;
-  loi: string;
+  loi: Loi;
   keywords: string[];
   loi_code: string;
   _formatted?: Record<string, unknown>;
   _rankingScore?: number;
+  
 }
+// Définir la structure de la réponse de l'API pour les catégories de loi
+
 
 export interface LoiArticleApiResponse {
   hits: LoiArticle[];
@@ -181,7 +216,6 @@ export interface LoiArticleApiResponse {
   offset: number;
   estimatedTotalHits: number;
 }
-
 // ==============
 // Juridictions
 // ==============
@@ -190,7 +224,6 @@ export interface Juridiction {
   designation: string;
   description: string;
 }
-
 export interface JuridictionsApiResponse {
   totalItems: number;
   member: Juridiction[];
@@ -213,6 +246,17 @@ export interface DossierNestedEntity extends ApiItem {
   designation: string;
   description?: string;
 }
+export interface LoiCategoryApiResponse {
+    member: Array<{
+        code: string;
+        designation: string;
+        description: string;
+    }>;
+    "@context": string;
+    "@id": string;
+    "@type": string;
+    totalItems: number;
+}
 
 // Type pour les décisions associées à un dossier
 export interface DossierDecision {
@@ -234,8 +278,6 @@ export interface DossierLoiArticle {
 }
 
 // L'interface **NewDossierData**
-// C'est le contrat de données pour la création d'un dossier.
-// Il ne contient que les champs que vous envoyez depuis le formulaire.
 export interface NewDossierData {
   objet: string;
   matiere: string;
@@ -246,7 +288,6 @@ export interface NewDossierData {
   preuves?: string;
   pointFort?: string;
   pointFaible?: string;
-  // Les champs suivants sont des string car vous enverrez l'ID ou le code de l'entité
   juridiction: string;
   chambreJuridique: string;
   solutionJuridique: string;
@@ -274,7 +315,6 @@ export interface DossierDetails extends ApiItem {
   faits: string;
   generated: boolean;
 
-  // Les entités liées sont des objets complets
   chambreJuridique: DossierNestedEntity;
   solutionJuridique: DossierNestedEntity;
   strategy: DossierNestedEntity;
@@ -282,4 +322,45 @@ export interface DossierDetails extends ApiItem {
   
   dossierDecisions: DossierDecision[];
   dossierLoiArticles: DossierLoiArticle[];
+}
+
+
+// ==============
+// ✨ NOUVEAU TYPE POUR LA RECHERCHE GLOBALE ✨
+// ==============
+/**
+ * Interface pour un résultat de recherche global, combinant avocats, décisions, lois, etc.
+ * C'est le format que la fonction `globalSearch` doit renvoyer.
+ */
+export interface GlobalSearchResult {
+  id: string; // Un identifiant unique pour l'élément (ex: code de l'avocat, code de la décision)
+  title: string; // Le titre ou le nom à afficher (ex: nom de l'avocat, objet de la décision)
+  type: "avocat" | "decision" | "loi" | "article"; // Le type de l'élément pour le différencier
+  details?: any; // L'objet complet si vous en avez besoin plus tard
+}
+
+/**
+ * Interface pour stocker les résultats de recherche regroupés par type.
+ * C'est le format que le composant `GlobalSearchResults` affichera.
+ */
+export interface GroupedSearchResults {
+    avocat: GlobalSearchResult[];
+    decision: GlobalSearchResult[];
+    loi: GlobalSearchResult[];
+    article: GlobalSearchResult[];
+    // Vous pouvez ajouter d'autres types ici si nécessaire
+}
+
+// list dossier_stratedy ....
+export interface DossierStrategy {
+  code: string;
+  designation: string; // ou name si ta propriété est différente
+}
+
+export interface DossierStrategyApiResponse {
+  "@context": string;
+  "@id": string;
+  "@type": string;
+  // totalItems: number;
+  member: DossierStrategy[];
 }

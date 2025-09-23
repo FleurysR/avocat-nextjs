@@ -1,3 +1,5 @@
+// api/deepseek/route.ts
+
 import { NextResponse } from "next/server";
 import OpenAI from "openai";
 
@@ -10,7 +12,6 @@ export async function POST(req: Request) {
   try {
     const { messages } = await req.json();
 
-    // misy validation simple sy  error handling   dia ilaina ilay izy 
     if (!messages || !Array.isArray(messages)) {
       return NextResponse.json(
         { error: "Format invalide : messages attendu" },
@@ -18,14 +19,15 @@ export async function POST(req: Request) {
       );
     }
 
-    const response = await client.chat.completions.create({
+    // ⭐ La clé du streaming est ici
+    const stream = await client.chat.completions.create({
       model: "deepseek-chat",
       messages,
+      stream: true, // IMPORTANT : active le mode streaming
     });
 
-    return NextResponse.json({
-      reply: response.choices[0].message.content,
-    });
+    // Retourne le flux de données directement
+    return new NextResponse(stream.toReadableStream());
   } catch (error: any) {
     console.error("Erreur DeepSeek API :", error);
     return NextResponse.json(

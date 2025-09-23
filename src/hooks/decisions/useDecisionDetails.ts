@@ -1,4 +1,6 @@
 // src/hooks/useDecisionDetails.ts
+"use client"; // <-- Add this directive
+
 import { useState, useEffect } from "react";
 import { fetchDecisionByCode } from "@/services/client-api";
 import { DecisionDetails } from "@/types";

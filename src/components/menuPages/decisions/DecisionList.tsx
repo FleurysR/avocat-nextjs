@@ -17,7 +17,8 @@ export function DecisionList({ decisions, viewMode, onSelect, searchTerm }: Deci
           <DecisionCard
             key={decision.code}
             decision={decision}
-            onSelect={() => onSelect(decision.code)}
+            // Supprimez onSelect, car il n'est plus utilisé dans DecisionCard
+            // onSelect={() => onSelect(decision.code)}
             searchTerm={searchTerm}
           />
         ))}

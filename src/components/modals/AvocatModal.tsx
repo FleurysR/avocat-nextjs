@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { AvocatDetails } from "@/types";
+import { AvocatDetails, Choice } from "@/types";
 import { Spinner } from "@/components/ui/shadcn-io/spinner/index";
 import { Badge } from "@/components/ui/badge";
 import { Mail, Phone, MapPin, IdCard, X } from "lucide-react";
@@ -22,6 +22,22 @@ export default function AvocatModal({
   error,
 }: AvocatModalProps) {
   if (!isOpen) return null;
+
+  // Helper pour afficher correctement les désignations
+  const getDesignation = (item: { designation?: string } | string | null | undefined) => {
+    if (!item) return "N/A";
+    if (typeof item === "string") return "N/A";
+    return item.designation || "N/A";
+  };
+
+  // Helper pour genre (Choice ou Choice[])
+  const getGenre = (genre: Choice | Choice[] | null | undefined) => {
+    if (!genre) return "N/A";
+    if (Array.isArray(genre)) {
+      return genre.length > 0 ? genre[0].designation : "N/A";
+    }
+    return genre.designation || "N/A";
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-fadeIn">
@@ -83,13 +99,16 @@ export default function AvocatModal({
                 </h3>
                 <div className="space-y-2">
                   <p className="text-sm">
-                    <span className="font-medium">Région:</span> {detailedAvocat.region?.designation || "N/A"}
+                    <span className="font-medium">Région:</span> {getDesignation(detailedAvocat.region)}
+                  </p>
+                  <p className="text-sm">
+                    <span className="font-medium">District:</span> {getDesignation(detailedAvocat.district)}
+                  </p>
+                  <p className="text-sm">
+                    <span className="font-medium">Commune:</span> {getDesignation(detailedAvocat.commune)}
                   </p>
                   <p className="text-sm">
                     <span className="font-medium">Ville:</span> {detailedAvocat.ville || "N/A"}
-                  </p>
-                  <p className="text-sm">
-                    <span className="font-medium">Commune:</span> {detailedAvocat.commune?.designation || "N/A"}
                   </p>
                 </div>
               </div>
@@ -102,18 +121,17 @@ export default function AvocatModal({
               </h3>
               <div className="flex flex-wrap gap-2">
                 <Badge className="bg-indigo-100 text-indigo-700 dark:bg-indigo-800 dark:text-indigo-200 px-3 py-1">
-                  Année d'exercice: {detailedAvocat.yearExercice}
+                  Année d'exercice: {detailedAvocat.yearExercice || "N/A"}
                 </Badge>
-                {detailedAvocat.genre && !Array.isArray(detailedAvocat.genre) && (
-                  <Badge className="bg-green-100 text-green-700 dark:bg-green-800 dark:text-green-200 px-3 py-1">
-                    Genre: {detailedAvocat.genre.designation}
-                  </Badge>
-                )}
-                {detailedAvocat.district && (
-                  <Badge className="bg-blue-100 text-blue-700 dark:bg-blue-800 dark:text-blue-200 px-3 py-1">
-                    District: {detailedAvocat.district.designation}
-                  </Badge>
-                )}
+                <Badge className="bg-green-100 text-green-700 dark:bg-green-800 dark:text-green-200 px-3 py-1">
+                  Genre: {getGenre(detailedAvocat.genre)}
+                </Badge>
+                <Badge className="bg-blue-100 text-blue-700 dark:bg-blue-800 dark:text-blue-200 px-3 py-1">
+                  District: {getDesignation(detailedAvocat.district)}
+                </Badge>
+                <Badge className="bg-purple-100 text-purple-700 dark:bg-purple-800 dark:text-purple-200 px-3 py-1">
+                  Commune: {getDesignation(detailedAvocat.commune)}
+                </Badge>
               </div>
             </div>
           </div>
