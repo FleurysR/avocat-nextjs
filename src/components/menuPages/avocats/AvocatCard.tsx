@@ -1,6 +1,5 @@
 import { Avocat } from "@/types";
 import { highlightText } from "@/components/utils/highlightText";
-// L'icône 'Gender' est remplacée par 'Users' qui est plus stable et représente un groupe de personnes
 import { User, Phone, MapPin, Scale, Users } from "lucide-react"; 
 import { Badge } from "@/components/ui/badge";
 
@@ -16,9 +15,12 @@ export function AvocatCardItem({ avocat, searchTerm, onClick }: AvocatCardItemPr
       onClick={() => onClick(avocat.code)}
       className="relative p-4 bg-white dark:bg-slate-800 rounded-xl shadow-md border border-gray-200 dark:border-slate-700 hover:shadow-lg transition-transform transform hover:-translate-y-0.5 cursor-pointer flex flex-col items-center gap-4 text-center"
     >
-      {/* 🔹 Badge matricule en haut droit */}
+      {/* 🔹 Badge matricule élégant en haut à droite */}
       <div className="absolute top-2 right-2">
-        <Badge variant="secondary" className="px-2 py-1 text-xs">
+        <Badge
+          variant="outline"
+          className="px-3 py-1 text-sm font-medium text-gray-700 bg-gray-100 rounded-full shadow-sm dark:text-gray-300 dark:bg-slate-700"
+        >
           {avocat.matricule || "N/A"}
         </Badge>
       </div>
@@ -43,8 +45,6 @@ export function AvocatCardItem({ avocat, searchTerm, onClick }: AvocatCardItemPr
             <Phone className="h-4 w-4 text-gray-500 dark:text-gray-400" />
             <span>{avocat.phonePrincipal || "-"}</span>
           </div>
-          {/* L'icône de téléphone est remplacée par l'icône 'Users' */}
-          
           {avocat.district && (
             <div className="flex items-center gap-1.5">
               <Scale className="h-4 w-4 text-gray-500 dark:text-gray-400" />

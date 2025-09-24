@@ -6,7 +6,6 @@ import { useState, useEffect } from "react";
 import { useSearch } from "@/components/context/SearchContext";
 import { Spinner } from "@/components/ui/shadcn-io/spinner/index";
 import { Pagination } from "@/components/Pagination";
-
 // Importez les nouveaux composants et hooks
 import { useLoiArticles } from "@/hooks/loi-articles/useLoiArticles";
 import { LoiArticleList } from "@/components/menuPages/loi-articles/LoiArticleList";

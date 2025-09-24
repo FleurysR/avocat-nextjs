@@ -1,5 +1,3 @@
-// src/types/dossier.ts (ou le nom de votre fichier de types principal)
-
 // ==============
 // Interfaces de base
 // ==============
@@ -22,7 +20,6 @@ export interface Choice {
   designation: string;
   description?: string;
 }
-
 // ==============
 // Définitions géographiques précises
 // ==============
@@ -32,7 +29,6 @@ export interface Region {
   code: string;
   designation: string;
 }
-
 export interface District {
   "@id": string;
   "@type": "District";
@@ -246,6 +242,13 @@ export interface DossierNestedEntity extends ApiItem {
   designation: string;
   description?: string;
 }
+export interface LoiCategory {
+    code: string;
+    designation: string;
+    description: string;
+}
+
+
 export interface LoiCategoryApiResponse {
     member: Array<{
         code: string;

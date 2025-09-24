@@ -20,7 +20,7 @@ export function LoiArticleCard({ article, search }: LoiArticleCardProps) {
 
   return (
     <li className="p-6 bg-gradient-to-r from-white to-gray-50 dark:from-slate-800 dark:to-slate-900 shadow-lg rounded-3xl border border-slate-200 dark:border-slate-700 hover:scale-[1.02] transition-transform duration-200">
-      <h3 className="text-lg font-bold text-indigo-600 dark:text-indigo-300 mb-1">{article.loi}</h3>
+      <h3 className="text-lg font-bold text-indigo-600 dark:text-indigo-300 mb-1">{article.loi.titre}</h3>
       <h2 className="text-xl font-semibold text-indigo-700 dark:text-indigo-400 mb-3">
         📄 Article n° {article.numero}
       </h2>

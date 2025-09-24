@@ -161,7 +161,7 @@ export default function AppSidebar({ isOpen, onToggle }: AppSidebarProps) {
           icon: Folders,
         },
         {
-          href: "/Espace-avocat/loi/articles",
+          href: "/Espace-avocat/loi",
           name: "Articles de Lois",
           icon: BookOpen,
         },

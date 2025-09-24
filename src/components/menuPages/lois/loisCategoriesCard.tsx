@@ -1,41 +1,38 @@
-// src/components/menuPages/loi/loisCategoriesCard.jsx
-
-"use client";
+// src/components/menuPages/lois/LoiCategoryCard.tsx
 
 import React from 'react';
-import { useLoiCategories } from '@/hooks/Lois/useLoisCategories';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Scale, FileText, LayoutGrid } from "lucide-react";
+import Link from 'next/link';
 
-const LoisCategoriesList = () => {
-  const { categories, loading, error } = useLoiCategories();
+interface LoiCategoryCardProps {
+  category: {
+    code: string;
+    designation: string;
+    description: string;
+  };
+}
 
-  if (loading) {
-    return <p>Chargement des catégories...</p>;
-  }
-
-  if (error) {
-    return <p>Erreur lors du chargement des catégories.</p>;
-  }
+export function LoiCategoryCard({ category }: LoiCategoryCardProps) {
   return (
-    <div style={{ padding: '20px' }}>
-      <h2>Catégories de Lois</h2>
-      <div style={{ 
-          display: 'grid', 
-          gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', 
-          gap: '20px' 
-      }}>
-        {categories.map((category) => (
-          <div key={category.code} style={{ 
-              border: '1px solid #ddd', 
-              borderRadius: '8px', 
-              padding: '16px', 
-              boxShadow: '0 2px 4px rgba(0,0,0,0.1)' 
-          }}>
-            <h3>{category.designation}</h3>
-            <p>{category.description}</p>
+    <Link href={`/Espace-avocat/lois/categories/${category.code}`}>
+      <Card className="w-full h-full shadow-lg transition-transform transform hover:-translate-y-1 hover:shadow-xl dark:bg-slate-800">
+        <CardHeader className="pb-2">
+          <div className="flex items-center space-x-4">
+            <div className="bg-indigo-500 dark:bg-indigo-400 p-2 rounded-full">
+              <FileText className="h-5 w-5 text-white dark:text-slate-900" />
+            </div>
+            <CardTitle className="text-xl font-bold text-gray-900 dark:text-gray-100">
+              {category.designation}
+            </CardTitle>
           </div>
-        ))}
-      </div>
-    </div>
+        </CardHeader>
+        <CardContent>
+          <CardDescription className="text-sm text-gray-600 dark:text-gray-400">
+            {category.description}
+          </CardDescription>
+        </CardContent>
+      </Card>
+    </Link>
   );
-};
-export default LoisCategoriesList;
+}

@@ -1,5 +1,6 @@
 // src/hooks/loi/useLoiCategories.ts
-
+// Ce hook est correct et renvoie les données de catégories.
+// Il peut être renommé pour plus de clarté si vous le souhaitez, mais il fonctionne.
 import { useState, useEffect } from "react";
 import { fetchLoiCategories } from "@/services/client-api";
 import { LoiCategoryApiResponse } from "@/types";
