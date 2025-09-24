@@ -182,6 +182,7 @@ export interface Loi {
   code: string;
   titre: string;
   version: string;
+  numero: string; 
   publieAt: string;
 }
 

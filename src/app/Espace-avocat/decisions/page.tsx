@@ -10,7 +10,7 @@ import { DecisionHeader, DecisionList } from "@/components/menuPages/decisions";
 export default function DecisionsPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [localSearch, setLocalSearch] = useState("");
-  const [viewMode, setViewMode] = useState<"card" | "table">("card");
+  const [viewMode, setViewMode] = useState<"table" | "card">("table");
   const [filters, setFilters] = useState({}); 
 
   const router = useRouter();

@@ -1,14 +1,13 @@
-// src/components/menuPages/LoisL/LoiList.tsx
 "use client";
 
 import React from 'react';
-import { useLois } from '@/hooks/Lois/loi/useLois'; 
-import { LoiCard } from '@/components/menuPages/LoisL/LoiCard'; 
-import { Scale } from "lucide-react"; // 👈 Use 'Scale' instead of 'Balance'
+import { useLoiCategories } from '@/hooks/Lois/useLoisCategories';
+import { LoiCategoryCard } from '@/components/menuPages/lois/loisCategoriesCard';
+import { FileText } from "lucide-react"; // Importez l'icône
 import { Spinner } from "@/components/ui/shadcn-io/spinner/index";
 
-export default function LoisList() {
-  const { lois, loading, error } = useLois();
+export default function LoisCategoriesPage() {
+  const { categories, loading, error } = useLoiCategories();
 
   if (loading) {
     return (
@@ -21,32 +20,24 @@ export default function LoisList() {
   if (error) {
     return (
       <div className="p-6 text-center text-red-500">
-        Erreur lors du chargement des lois : {error}
+        {error}
       </div>
     );
-  }
-  
-  if (lois.length === 0) {
-      return (
-        <div className="p-6 text-center text-gray-500">
-          Aucune loi n'a été trouvée pour le moment.
-        </div>
-      );
   }
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-900 text-gray-900 dark:text-gray-100 p-6">
       <header className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 pb-4 border-b-2 border-indigo-500">
         <h1 className="text-3xl font-bold text-indigo-700 dark:text-indigo-400 flex items-center gap-2 mb-4 sm:mb-0">
-          <Scale className="h-8 w-8" />
-          ⚖️ Lois
+          <FileText className="h-8 w-8" />
+          🏛️ Catégories de Lois
         </h1>
       </header>
 
       <div className="flex-1 overflow-auto">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {lois.map(loi => (
-            <LoiCard key={loi.code} loi={loi} />
+          {categories.map(category => (
+            <LoiCategoryCard key={category.code} category={category} />
           ))}
         </div>
       </div>

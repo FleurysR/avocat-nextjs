@@ -42,18 +42,7 @@ export function DossiersHeader({
           />
         </div>
         <div className="flex items-center space-x-2 bg-gray-100 dark:bg-slate-800 p-1 rounded-xl shadow-inner">
-          <button
-            onClick={() => onViewModeChange("card")}
-            className={cn(
-              "p-2 rounded-lg transition-colors duration-200",
-              viewMode === "card"
-                ? "bg-indigo-600 text-white shadow-md"
-                : "text-gray-500 hover:text-indigo-600"
-            )}
-            aria-label="Vue par cartes"
-          >
-            <LayoutGrid className="h-5 w-5" />
-          </button>
+          
           <button
             onClick={() => onViewModeChange("list")}
             className={cn(
@@ -65,6 +54,18 @@ export function DossiersHeader({
             aria-label="Vue par liste"
           >
             <List className="h-5 w-5" />
+          </button>
+          <button
+            onClick={() => onViewModeChange("card")}
+            className={cn(
+              "p-2 rounded-lg transition-colors duration-200",
+              viewMode === "card"
+                ? "bg-indigo-600 text-white shadow-md"
+                : "text-gray-500 hover:text-indigo-600"
+            )}
+            aria-label="Vue par cartes"
+          >
+            <LayoutGrid className="h-5 w-5" />
           </button>
         </div>
         <Link href="/Espace-avocat/dossiers/creer">

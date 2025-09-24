@@ -5,8 +5,8 @@ import { cn } from "@/lib/utils";
 interface DecisionHeaderProps {
   localSearch: string;
   onSearchChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  viewMode: "card" | "table";
-  onViewModeChange: (mode: "card" | "table") => void;
+  viewMode: "table" | "card";
+  onViewModeChange: (mode: "table" | "card") => void;
 }
 
 export function DecisionHeader({
@@ -38,18 +38,7 @@ export function DecisionHeader({
           />
         </div>
         <div className="flex items-center space-x-1 p-1 bg-gray-100 dark:bg-slate-800 rounded-full shadow-inner">
-          <button
-            onClick={() => onViewModeChange("card")}
-            className={cn(
-              "p-2 rounded-full transition-colors duration-200",
-              viewMode === "card"
-                ? "bg-indigo-500 text-white shadow"
-                : "text-gray-500 hover:text-indigo-500"
-            )}
-            aria-label="Vue par cartes"
-          >
-            <Grid className="h-5 w-5" />
-          </button>
+          
           <button
             onClick={() => onViewModeChange("table")}
             className={cn(
@@ -62,6 +51,20 @@ export function DecisionHeader({
           >
             <List className="h-5 w-5" />
           </button>
+          
+          <button
+            onClick={() => onViewModeChange("card")}
+            className={cn(
+              "p-2 rounded-full transition-colors duration-200",
+              viewMode === "card"
+                ? "bg-indigo-500 text-white shadow"
+                : "text-gray-500 hover:text-indigo-500"
+            )}
+            aria-label="Vue par cartes"
+          >
+            <Grid className="h-5 w-5" />
+          </button>
+          
         </div>
       </div>
     </header>

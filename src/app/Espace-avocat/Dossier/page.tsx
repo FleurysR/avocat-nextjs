@@ -11,7 +11,7 @@ import { DossiersHeader } from "@/components/menuPages/dossiers/DossiersHeader";
 export default function DossiersListPage() {
   const [currentPage, setPage] = useState(1);
   const [localSearch, setLocalSearch] = useState("");
-  const [viewMode, setViewMode] = useState<"card" | "list">("card"); // Mode de vue
+  const [viewMode, setViewMode] = useState<"list" | "card">("list"); // Mode de vue
 
   const { dossiers, loading, error, totalItems, totalPages } = useDossiers(localSearch, currentPage);
 

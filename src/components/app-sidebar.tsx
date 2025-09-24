@@ -152,19 +152,24 @@ export default function AppSidebar({ isOpen, onToggle }: AppSidebarProps) {
     },
     { href: "/Espace-avocat/juridiction", name: "Juridiction", icon: Scale },
     {
-      name: "Lois",
-      icon: BookText,
-      subItems: [
-        {
-          href: "/Espace-avocat/Lois/",
-          name: "Catégories de Lois",
-          icon: Folders,
-        },
-        {
-          href: "/Espace-avocat/loi",
-          name: "Articles de Lois",
-          icon: BookOpen,
-        },
+        name: "Lois",
+    icon: BookText,
+    subItems: [
+      {
+        href: "/Espace-avocat/Lois/categories",
+        name: "Catégories de Lois",
+        icon: Folders,
+      },
+      {
+        href: "/Espace-avocat/Lois/articles",
+        name: "Articles de Lois",
+        icon: BookOpen,
+      },
+      {
+        href: "/Espace-avocat/Lois", 
+        name: "TOUTES LES LOIS",
+        icon: BookOpen,
+      },
       ],
     },
   ];

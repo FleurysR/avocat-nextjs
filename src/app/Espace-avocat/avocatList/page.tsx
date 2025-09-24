@@ -26,7 +26,7 @@ export default function AvocatsPage() {
     onSortChange, // NOUVEAU: Récupère la fonction de tri du hook
   } = useAvocatsData();
 
-  const [viewMode, setViewMode] = useState<"card" | "list">("card");
+  const [viewMode, setViewMode] = useState<"list" | "card">("list");
   const handleAvocatClick = (code: string) => {
     router.push(`/Espace-avocat/avocatList/${code}`);
   };
@@ -41,6 +41,18 @@ export default function AvocatsPage() {
         <div className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto">
           <SearchInput placeholder="Rechercher par nom, prénom..." className="w-full sm:w-auto md:w-[250px]" />
           <div className="flex items-center space-x-2 bg-gray-100 dark:bg-slate-800 p-1 rounded-xl shadow-inner flex-shrink-0">
+                        <button
+              onClick={() => setViewMode("list")}
+              className={cn(
+                "p-2 rounded-lg transition-colors duration-200",
+                viewMode === "list"
+                  ? "bg-indigo-600 text-white shadow-md"
+                  : "text-gray-500 hover:text-indigo-600"
+              )}
+              aria-label="Vue par liste"
+            >
+              <List className="h-5 w-5" />
+            </button>
             <button
               onClick={() => setViewMode("card")}
               className={cn(
@@ -53,18 +65,7 @@ export default function AvocatsPage() {
             >
               <LayoutGrid className="h-5 w-5" />
             </button>
-            <button
-              onClick={() => setViewMode("list")}
-              className={cn(
-                "p-2 rounded-lg transition-colors duration-200",
-                viewMode === "list"
-                  ? "bg-indigo-600 text-white shadow-md"
-                  : "text-gray-500 hover:text-indigo-600"
-              )}
-              aria-label="Vue par liste"
-            >
-              <List className="h-5 w-5" />
-            </button>
+            
           </div>
         </div>
       </header>

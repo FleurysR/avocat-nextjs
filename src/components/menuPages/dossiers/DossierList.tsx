@@ -23,7 +23,7 @@ export function DossierList({ dossiers, viewMode, searchTerm, onSelect }: Dossie
       <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-gray-200 dark:border-slate-700 p-6">
         {/* En-tête de la liste */}
         <div className="hidden md:grid grid-cols-3 gap-6 px-6 py-4 text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider border-b border-gray-200 dark:border-gray-700 mb-4">
-          <div className="col-span-1">Code</div>
+          {/* <div className="col-span-1">Code</div> */}
           <div className="col-span-1">Objet</div>
           <div className="col-span-1">Date de création</div>
         </div>
@@ -38,13 +38,13 @@ export function DossierList({ dossiers, viewMode, searchTerm, onSelect }: Dossie
             >
               <div className="md:grid md:grid-cols-3 md:gap-6 items-center">
                 {/* Cellule Code (sur une ligne à part sur mobile) */}
-                <div className="flex items-center space-x-2 md:col-span-1 mb-2 md:mb-0">
+                {/* <div className="flex items-center space-x-2 md:col-span-1 mb-2 md:mb-0">
                   <FileText className="h-5 w-5 text-indigo-500 flex-shrink-0" />
                   <span className="text-base font-medium text-indigo-600 dark:text-indigo-400 group-hover:underline">
                     {dossier.code}
                   </span>
                 </div>
-                
+                 */}
                 {/* Cellule Objet */}
                 <div className="md:col-span-1 mb-2 md:mb-0">
                   <p className="text-base font-semibold text-gray-800 dark:text-gray-200 line-clamp-2">
