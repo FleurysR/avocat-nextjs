@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const serverApiClient = axios.create({
-  baseURL: "https://avocat.krypteia.dev/api",
+  baseURL: "https://127.0.0.1:8000/api",
 });
 
 // Intercepteur pour ajouter le token JWT à chaque requête

@@ -1,3 +1,4 @@
+// src/components/menuPages/avocats/AvocatListItem.tsx
 import { Avocat } from "@/types";
 import { highlightText } from "@/components/utils/highlightText";
 import { User, Phone, MapPin, Scale } from "lucide-react";
@@ -6,18 +7,23 @@ interface AvocatListItemProps {
   avocat: Avocat;
   searchTerm: string;
   onClick: (code: string) => void;
+  // AJOUT NÉCESSAIRE pour accepter la classe de AvocatsGrid
+  className?: string; 
 }
 
-export function AvocatListItem({ avocat, searchTerm, onClick }: AvocatListItemProps) {
+export function AvocatListItem({ avocat, searchTerm, onClick, className }: AvocatListItemProps) {
   return (
     <tr
       onClick={() => onClick(avocat.code)}
-      className="group border-b border-gray-200 dark:border-slate-700 cursor-pointer 
-                 transition-colors duration-200 ease-in-out hover:bg-gray-50 dark:hover:bg-slate-800"
+      // L'ancienne classe de hover est remplacée par le contenu de 'className' venant de AvocatsGrid, 
+      // qui inclut les couleurs de zébrage et de mise en évidence.
+      className={`group border-b border-gray-200 dark:border-slate-700 cursor-pointer 
+                 transition-colors duration-200 ease-in-out ${className}`} 
     >
       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">
         <div className="flex items-center gap-4">
-          <User className="h-8 w-8 text-indigo-600 dark:text-indigo-400 flex-shrink-0 opacity-80 group-hover:opacity-100 transition-opacity" />
+          {/* HARMONISATION : Icône en Bleu Royal */}
+          <User className="h-8 w-8 text-sidebar-primary dark:text-sidebar-primary/80 flex-shrink-0 opacity-80 group-hover:opacity-100 transition-opacity" />
           <div className="flex-1 truncate">
             {highlightText(avocat.nom, searchTerm)} {highlightText(avocat.prenoms, searchTerm)}
           </div>

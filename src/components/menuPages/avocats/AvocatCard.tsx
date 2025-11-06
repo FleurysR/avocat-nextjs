@@ -26,10 +26,12 @@ export function AvocatCardItem({ avocat, searchTerm, onClick }: AvocatCardItemPr
       </div>
 
       <div className="flex-shrink-0">
-        <User className="h-12 w-12 text-indigo-600 dark:text-indigo-400" />
+        {/* HARMONISATION : Icône en Bleu Royal */}
+        <User className="h-12 w-12 text-sidebar-primary dark:text-sidebar-primary/80" />
       </div>
       <div className="flex-1 min-w-0">
-        <h2 className="text-xl font-semibold text-indigo-700 dark:text-indigo-400 truncate">
+        {/* HARMONISATION : Titre en Bleu Royal */}
+        <h2 className="text-xl font-semibold text-sidebar-primary dark:text-sidebar-primary/80 truncate">
           {highlightText(avocat.nom, searchTerm)} {highlightText(avocat.prenoms, searchTerm)}
         </h2>
         <div className="flex flex-col items-center gap-1.5 text-gray-600 dark:text-gray-300 text-sm mt-2">

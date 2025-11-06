@@ -56,7 +56,7 @@ const NavItemComponent = ({
             setIsMenuOpen(!isMenuOpen);
             if (!isOpen) onToggle();
           }}
-          // Pas de classe bg-indigo-500 pour le parent, seulement le hover
+          // Pas de couleur pour le parent, seulement le hover
           className={`group relative flex items-center p-3 rounded-lg text-sm font-medium transition-colors ${
             isOpen ? "gap-3" : "justify-center"
           } hover:bg-gray-200 dark:hover:bg-slate-800`}
@@ -83,9 +83,14 @@ const NavItemComponent = ({
                 key={subItem.name}
                 href={subItem.href || ""}
                 className={`flex items-center p-2 rounded-lg text-sm font-medium transition-colors gap-3 ${
+                  // *** LOGIQUE CORRIGÉE ET MISE À JOUR (Bleu Royal et Vert Vif) ***
                   isActive(subItem.href || "")
-                    ? "bg-indigo-400 text-white dark:bg-indigo-500"
-                    : "hover:bg-gray-200 dark:hover:bg-slate-800"
+                    ? // Si ACTIF, vérifier si c'est le CTA pour appliquer le Vert Vif, sinon le Bleu Royal
+                      subItem.name === "Créer un nouveau dossier"
+                      ? "bg-chart-1 text-black dark:bg-chart-1 hover:bg-chart-1/80" // VERT VIF CTA
+                      : "bg-sidebar-primary text-white dark:bg-sidebar-primary" // BLEU ROYAL
+                    : // Si INACTIF, couleur neutre
+                      "hover:bg-gray-200 dark:hover:bg-slate-800"
                 }`}
               >
                 <subItem.icon className="h-5 w-5" />
@@ -105,8 +110,9 @@ const NavItemComponent = ({
       className={`group relative flex items-center p-3 rounded-lg text-sm font-medium transition-colors ${
         isOpen ? "gap-3" : "justify-center"
       } ${
+        // *** MISE À JOUR : BLEU ROYAL pour le lien simple actif ***
         isActive(item.href || "")
-          ? "bg-indigo-500 text-white dark:bg-indigo-600"
+          ? "bg-sidebar-primary text-white dark:bg-sidebar-primary"
           : "hover:bg-gray-200 dark:hover:bg-slate-800"
       }`}
     >
@@ -167,7 +173,7 @@ export default function AppSidebar({ isOpen, onToggle }: AppSidebarProps) {
       },
       {
         href: "/Espace-avocat/Lois", 
-        name: "TOUTES LES LOIS",
+        name: "Toutes Les Lois",
         icon: BookOpen,
       },
       ],
@@ -205,7 +211,8 @@ export default function AppSidebar({ isOpen, onToggle }: AppSidebarProps) {
             }`}
           >
             <div className="flex items-center gap-2 w-full">
-              <div className="w-10 h-10 flex items-center justify-center bg-indigo-600 rounded-full">
+              {/* Logo en Bleu Royal */}
+              <div className="w-10 h-10 flex items-center justify-center bg-sidebar-primary rounded-full">
                 <Briefcase className="w-6 h-6 text-white" />
               </div>
               <span
@@ -262,9 +269,10 @@ export default function AppSidebar({ isOpen, onToggle }: AppSidebarProps) {
               >
                 Annuler
               </button>
+              {/* Bouton Confirmer en Bleu Royal */}
               <button
                 onClick={confirmLogout}
-                className="px-4 py-2 rounded-lg text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 transition-colors"
+                className="px-4 py-2 rounded-lg text-sm font-medium text-white bg-sidebar-primary hover:bg-sidebar-primary/80 transition-colors"
               >
                 Confirmer
               </button>

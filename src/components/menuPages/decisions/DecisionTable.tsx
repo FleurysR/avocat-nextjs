@@ -1,12 +1,11 @@
-// src/components/DecisionTable.tsx
-"use client";
+// src/components/decisions/DecisionTable.tsx
 
 import { Decision } from "@/types";
 import { highlightText } from "../../utils/highlightText";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+import { Eye, Pencil, Trash2 } from "lucide-react";
 
-// Importez les composants de shadcn/ui
 import {
   Table,
   TableBody,
@@ -15,6 +14,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
 
 interface DecisionTableProps {
   decisions: Decision[];
@@ -24,40 +24,71 @@ interface DecisionTableProps {
 
 export function DecisionTable({ decisions, onSelect, searchTerm }: DecisionTableProps) {
   return (
-    // Le conteneur donne un effet de "carte" avec des coins arrondis et une bordure
-    <div className="rounded-xl border shadow-lg overflow-hidden">
+    <div className="rounded-xl border shadow-md overflow-hidden">
       <Table>
-        {/* En-tête du tableau - Style plus pro avec les couleurs de shadcn/ui */}
-        <TableHeader className="bg-gray-50 dark:bg-slate-800">
+        <TableHeader className="bg-gray-100 dark:bg-slate-900">
           <TableRow>
-            <TableHead className="w-[300px] font-bold text-gray-900 dark:text-gray-100">Objet</TableHead>
-            <TableHead className="w-[150px] font-bold text-gray-900 dark:text-gray-100">Numéro Dossier</TableHead>
-            <TableHead className="w-[120px] font-bold text-gray-900 dark:text-gray-100">Date</TableHead>
-            <TableHead className="font-bold text-gray-900 dark:text-gray-100">Demandeur</TableHead>
-            <TableHead className="font-bold text-gray-900 dark:text-gray-100">Défenseur</TableHead>
+            <TableHead className="w-[400px] font-semibold text-gray-900 dark:text-gray-100 py-4">
+              Objet
+            </TableHead>
+            <TableHead className="w-[150px] font-semibold text-gray-900 dark:text-gray-100 py-4">
+              Numéro Dossier
+            </TableHead>
+            <TableHead className="w-[120px] font-semibold text-gray-900 dark:text-gray-100 py-4">
+              Date
+            </TableHead>
+            <TableHead className="font-semibold text-gray-900 dark:text-gray-100 py-4">
+              Demandeur
+            </TableHead>
+            <TableHead className="font-semibold text-gray-900 dark:text-gray-100 py-4">
+              Défenseur
+            </TableHead>
+            <TableHead className="text-center font-semibold text-gray-900 dark:text-gray-100 py-4">
+              Actions
+            </TableHead>
           </TableRow>
         </TableHeader>
 
-        {/* Corps du tableau */}
         <TableBody>
-          {decisions.map((decision) => (
+          {decisions.map((decision, index) => (
             <TableRow
               key={decision.code}
-              onClick={() => onSelect(decision.code)}
-              className="cursor-pointer transition-colors hover:bg-gray-50/50 dark:hover:bg-slate-800/50"
+              // MODIFIÉ : Application des lignes zébrées (Gris Brume)
+              className={`transition-colors cursor-pointer 
+                ${index % 2 === 0 ? 'bg-secondary dark:bg-slate-800' : 'bg-white dark:bg-slate-900'} 
+                hover:bg-gray-100 dark:hover:bg-slate-700/50`}
             >
-              {/* Cellule "Objet" avec la mise en surbrillance de la recherche */}
-              <TableCell className="font-medium max-w-xs line-clamp-2">
-                {highlightText(decision.objet ?? '', searchTerm)}
+              <TableCell className="font-medium max-w-xs line-clamp-2 py-4">
+                {highlightText(decision.objet ?? "", searchTerm)}
               </TableCell>
+              <TableCell className="py-4">{decision.numeroDossier || "-"}</TableCell>
+              <TableCell className="py-4">
+                {decision.decisionAt
+                  ? format(new Date(decision.decisionAt), "dd/MM/yyyy", { locale: fr })
+                  : "-"}
+              </TableCell>
+              <TableCell className="py-4">{decision.avocatDemandeur || "-"}</TableCell>
+              <TableCell className="py-4">{decision.avocatDefendeur || "-"}</TableCell>
 
-              {/* Cellules restantes */}
-              <TableCell>{decision.numeroDossier || "-"}</TableCell>
-              <TableCell>
-                {decision.decisionAt ? format(new Date(decision.decisionAt), "dd/MM/yyyy", { locale: fr }) : "-"}
+              {/* Colonne Actions */}
+              <TableCell className="flex justify-center gap-2 py-4">
+                {/* MODIFIÉ : 'Voir' en Bleu Royal */}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => onSelect(decision.code)}
+                >
+                  <Eye className="h-4 w-4 text-sidebar-primary" />
+                </Button>
+                {/* MODIFIÉ : 'Modifier' en Vert Vif */}
+                <Button variant="ghost" size="icon">
+                  <Pencil className="h-4 w-4 text-chart-1" />
+                </Button>
+                {/* Conservé : 'Supprimer' en Rouge (conventionnel) */}
+                <Button variant="ghost" size="icon">
+                  <Trash2 className="h-4 w-4 text-red-600" />
+                </Button>
               </TableCell>
-              <TableCell>{decision.avocatDemandeur || "-"}</TableCell>
-              <TableCell>{decision.avocatDefendeur || "-"}</TableCell>
             </TableRow>
           ))}
         </TableBody>

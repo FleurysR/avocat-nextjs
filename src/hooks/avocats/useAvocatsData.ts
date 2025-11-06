@@ -36,12 +36,10 @@ export const useAvocatsData = () => {
       setSortOrder("asc");
     }
   };
-
   // Réinitialise la pagination à chaque changement
   useEffect(() => {
     setCurrentPage(1);
   }, [debouncedSearch, sortField, sortOrder]);
-
   // Appelle l'API lorsque la page, la recherche ou le tri change
   useEffect(() => {
     const loadAvocats = async () => {
@@ -55,7 +53,6 @@ export const useAvocatsData = () => {
           PAGE_SIZE,
           currentPage
         );
-
         const fetchedAvocats = Array.isArray(data.member) ? data.member : [];
         setAvocats(fetchedAvocats);
         setTotalItems(data.totalItems || fetchedAvocats.length);
@@ -69,7 +66,6 @@ export const useAvocatsData = () => {
     };
     loadAvocats();
   }, [currentPage, debouncedSearch, sortField, sortOrder]);
-
   return {
     avocats,
     currentPage,
@@ -81,6 +77,7 @@ export const useAvocatsData = () => {
     debouncedSearch,
     sortField,
     sortOrder,
-    onSortChange, // La nouvelle fonction de tri
+    onSortChange,
   };
+  
 };

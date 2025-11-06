@@ -65,6 +65,19 @@ export interface DecisionsApiResponse {
   estimatedTotalHits: number;
 }
 
+// MISE À JOUR CRITIQUE POUR LE FILTRAGE PAR DATE
+export interface DecisionsFilters {
+    // Les filtres de date sont maintenant OPTIONNELS (?) pour permettre la valeur par défaut {}
+    date_min?: string; 
+    date_max?: string; 
+
+    // Ajoutez ici les autres filtres que vous pourriez utiliser (rendus facultatifs)
+    juridictionCode?: string;
+    natureCode?: string;
+    solutionCode?: string;
+    chambreCode?: string;
+}
+
 export interface DecisionDetails {
   code: string;
   numero: string;

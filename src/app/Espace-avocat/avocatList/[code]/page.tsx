@@ -1,4 +1,4 @@
-// src/app/Espace-avocat/avocatList/[code]/page.tsx
+// src/app/Espace-avocat/avocatList/[code]/page.tsx (Code principal)
 
 "use client";
 
@@ -10,7 +10,6 @@ import {
   Mail,
   Phone,
   MapPin,
-  Briefcase,
   User,
   SquareGanttChart,
   Calendar,
@@ -18,6 +17,8 @@ import {
   FileText,
   Clock,
   Globe,
+  Home,
+  GanttChartSquare, // Utilisé pour remplacer SquareGanttChart dans les propriétés
 } from "lucide-react";
 import { useParams } from "next/navigation";
 
@@ -72,6 +73,13 @@ export default function AvocatDetailsPage() {
     return genre?.designation || "Non spécifié";
   };
 
+  const getExperienceValue = (years: number | null | undefined): string => {
+    if (!years || years <= 0) {
+      return "Moins d'un an";
+    }
+    return `${years} an${years > 1 ? 's' : ''}`;
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-teal-50 dark:from-slate-900 to-amber-50 dark:to-slate-900 p-6 sm:p-10 flex justify-center">
       <div className="w-full max-w-6xl">
@@ -85,13 +93,12 @@ export default function AvocatDetailsPage() {
           </div>
         ) : detailedAvocat ? (
           <div className="space-y-12">
-            {/* 🚀 SECTION PRINCIPALE : En-tête de Profil */}
+            
+            {/* 🚀 SECTION PRINCIPALE : En-tête de Profil (INCHANGÉ) */}
             <header className="bg-white dark:bg-slate-800 rounded-3xl shadow-xl p-8 sm:p-12 flex flex-col md:flex-row items-center md:items-start md:space-x-10 relative overflow-hidden transform-gpu animate-fade-in-up">
-              {/* Effet de fond subtil avec des couleurs plus chaudes */}
               <div className="absolute inset-0 bg-gradient-to-tr from-teal-50 via-transparent to-amber-50 dark:from-slate-700 dark:to-slate-900 opacity-60 rounded-3xl z-0"></div>
 
               <div className="relative z-10 flex-shrink-0 mb-8 md:mb-0">
-                {/* Icône user avec un dégradé plus coloré */}
                 <div className="h-32 w-32 bg-gradient-to-br from-teal-400 to-amber-400 dark:from-slate-600 dark:to-slate-700 rounded-full flex items-center justify-center shadow-lg transform hover:scale-105 transition-transform duration-300 ease-out">
                   <User className="h-20 w-20 text-white dark:text-gray-300 opacity-80" />
                 </div>
@@ -101,57 +108,72 @@ export default function AvocatDetailsPage() {
               </div>
 
               <div className="relative z-10 flex-grow text-center md:text-left space-y-4">
-                <h1 className="text-5xl sm:text-6xl font-extrabold text-gray-900 dark:text-gray-100 leading-tight tracking-tighter">
+                <h1 className="text-5xl sm:text-6xl font-extrabold text-gray-900 dark:text-gray-100 leading-tight tracking-tight">
                   {detailedAvocat.prenoms} <span className="text-teal-700 dark:text-teal-400">{detailedAvocat.nom}</span>
                 </h1>
                 <p className="text-xl font-semibold text-gray-700 dark:text-gray-300 italic">
                   Avocat inscrit au barreau de {getDesignation(detailedAvocat.region)}
                 </p>
 
-                {/* Blocs d'informations de contact plus compacts */}
                 <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  <InfoBlock icon={Mail} label="Email" value={detailedAvocat.email || "Non spécifié"} />
-                  <InfoBlock icon={Phone} label="Téléphone" value={detailedAvocat.phonePrincipal || "Non spécifié"} />
-                  <InfoBlock icon={MapPin} label="Ville" value={detailedAvocat.ville || "Non spécifié"} />
+                  <InfoBlock label="Email" value={detailedAvocat.email || "Non spécifié"} />
+                  <InfoBlock label="Téléphone" value={detailedAvocat.phonePrincipal || "Non spécifié"} />
+                  <InfoBlock label="Ville" value={detailedAvocat.ville || "Non spécifié"} />
+                </div>
+
+                <div className="pt-6 flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
+                    <button className="px-8 py-3 bg-teal-600 text-white font-bold rounded-xl shadow-lg hover:bg-teal-700 transition-colors duration-200 transform hover:scale-105">
+                        Contacter cet Avocat
+                    </button>
+                    <button className="px-8 py-3 bg-amber-500 text-white font-bold rounded-xl shadow-lg hover:bg-amber-600 transition-colors duration-200 transform hover:scale-105">
+                        Prendre Rendez-vous
+                    </button>
                 </div>
               </div>
             </header>
 
-            {/* 🚀 SECTION : Détails Professionnels (Fact Cards) */}
-            <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 animate-fade-in delay-200">
-              <FactCard
-                icon={Clock}
-                label="Années d'expérience"
-                value={`${detailedAvocat.yearExercice || "N/A"} ans`}
-              />
-              <FactCard
-                icon={Calendar}
-                label="Date d'inscription"
-                value={new Date(detailedAvocat.inscriptionAt).toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric' }) || "Non spécifié"}
-              />
-              <FactCard
-                icon={SquareGanttChart}
-                label="Genre"
-                value={getGenre(detailedAvocat.genre)}
-              />
-              <FactCard
-                icon={Globe}
-                label="Commune"
-                value={getDesignation(detailedAvocat.commune)}
-              />
-              <FactCard
-                icon={Globe}
-                label="District"
-                value={getDesignation(detailedAvocat.district)}
-              />
-               <FactCard
-                icon={Globe}
-                label="Région"
-                value={getDesignation(detailedAvocat.region)}
-              />
+            {/* 🚀 NOUVELLE SECTION : Détails Légaux et Administratifs (Type Fichier) */}
+            <section className="bg-white dark:bg-slate-800 rounded-3xl shadow-xl p-8 animate-fade-in delay-200">
+                <div className="flex items-center gap-4 text-gray-900 dark:text-gray-100 mb-6 pb-4 border-b border-teal-200 dark:border-slate-700">
+                    <GanttChartSquare className="h-8 w-8 text-teal-700 dark:text-teal-400" />
+                    <h2 className="text-3xl font-bold">Détails Légaux et Administratifs</h2>
+                </div>
+                
+                <div className="divide-y divide-gray-100 dark:divide-slate-700">
+                    <PropertyListItem
+                        icon={Clock}
+                        label="Années d'expérience"
+                        value={getExperienceValue(detailedAvocat.yearExercice)}
+                    />
+                    <PropertyListItem
+                        icon={Calendar}
+                        label="Date d'inscription au Barreau"
+                        value={new Date(detailedAvocat.inscriptionAt).toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric' }) || "Non spécifié"}
+                    />
+                    <PropertyListItem
+                        icon={SquareGanttChart}
+                        label="Genre"
+                        value={getGenre(detailedAvocat.genre)}
+                    />
+                    <PropertyListItem
+                        icon={Home}
+                        label="Commune d'Exercice"
+                        value={getDesignation(detailedAvocat.commune)}
+                    />
+                    <PropertyListItem
+                        icon={MapPin}
+                        label="District"
+                        value={getDesignation(detailedAvocat.district)}
+                    />
+                    <PropertyListItem
+                        icon={Globe}
+                        label="Région du Barreau"
+                        value={getDesignation(detailedAvocat.region)}
+                    />
+                </div>
             </section>
 
-            {/* 🚀 SECTION : À Propos / Biographie */}
+            {/* 🚀 SECTION : À Propos / Biographie (INCHANGÉ) */}
             {detailedAvocat.biographie && (
               <section className="bg-white dark:bg-slate-800 rounded-3xl shadow-xl p-8 animate-fade-in delay-400">
                 <div className="flex items-center gap-4 text-gray-900 dark:text-gray-100 mb-6 pb-4 border-b border-gray-100 dark:border-slate-700">
@@ -164,7 +186,7 @@ export default function AvocatDetailsPage() {
               </section>
             )}
 
-            {/* 🚀 SECTION : Domaines d'Expertise / Spécialités */}
+            {/* 🚀 SECTION : Domaines d'Expertise / Spécialités (INCHANGÉ) */}
             {detailedAvocat.specialites && detailedAvocat.specialites.length > 0 && (
               <section className="bg-white dark:bg-slate-800 rounded-3xl shadow-xl p-8 animate-fade-in delay-600">
                 <div className="flex items-center gap-4 text-gray-900 dark:text-gray-100 mb-6 pb-4 border-b border-gray-100 dark:border-slate-700">
@@ -194,34 +216,68 @@ export default function AvocatDetailsPage() {
   );
 }
 
-// Composant réutilisable pour les blocs d'information de l'en-tête (plus compact)
+
+// ----------------------------------------------------------------------------------
+// COMPOSANTS RÉUTILISABLES
+// ----------------------------------------------------------------------------------
+
+// Composant réutilisable pour les blocs d'information de l'en-tête (cliquable)
 interface InfoBlockProps {
-  icon: React.ElementType;
   label: string;
   value: string;
 }
 
-const InfoBlock: React.FC<InfoBlockProps> = ({ icon: Icon, label, value }) => (
-  <div className="flex items-center gap-3 p-2 bg-gray-50 dark:bg-slate-700 rounded-lg shadow-sm text-gray-800 dark:text-gray-200 hover:shadow-md transition-shadow duration-200 ease-out">
-    <Icon className="h-5 w-5 text-teal-600 dark:text-teal-400 flex-shrink-0" />
-    <div>
-      <p className="text-xs font-medium text-gray-500 dark:text-gray-400">{label}</p>
-      <p className="text-sm font-semibold truncate">{value}</p>
+const InfoBlock: React.FC<InfoBlockProps> = ({ label, value }) => {
+  let Icon: React.ElementType;
+  let href: string | undefined = undefined;
+
+  if (label === "Email") {
+    Icon = Mail;
+    if (value !== "Non spécifié") {
+      href = `mailto:${value}`;
+    }
+  } else if (label === "Téléphone") {
+    Icon = Phone;
+    if (value !== "Non spécifié") {
+      href = `tel:${value.replace(/\s/g, "")}`;
+    }
+  } else if (label === "Ville") {
+    Icon = MapPin;
+  } else {
+    Icon = Globe;
+  }
+
+  const content = (
+    <div className={`flex items-center gap-3 p-2 bg-gray-50 dark:bg-slate-700 rounded-lg shadow-sm text-gray-800 dark:text-gray-200 ${href ? 'hover:shadow-md cursor-pointer' : ''} transition-shadow duration-200 ease-out`}>
+      <Icon className="h-5 w-5 text-teal-600 dark:text-teal-400 flex-shrink-0" />
+      <div>
+        <p className="text-xs font-medium text-gray-500 dark:text-gray-400">{label}</p>
+        <p className="text-sm font-semibold truncate">{value}</p>
+      </div>
     </div>
-  </div>
-);
+  );
 
-// Composant réutilisable pour les "Fact Cards" (plus petits)
-interface FactCardProps {
+  return href ? <a href={href} target="_blank" rel="noopener noreferrer">{content}</a> : content;
+};
+
+
+// NOUVEAU COMPOSANT : Style "Fichier Document" (Remplaçant FactCard)
+interface PropertyListItemProps {
   icon: React.ElementType;
   label: string;
   value: string;
 }
 
-const FactCard: React.FC<FactCardProps> = ({ icon: Icon, label, value }) => (
-  <div className="bg-white dark:bg-slate-800 rounded-2xl p-5 shadow-md transition-all hover:shadow-lg hover:scale-[1.02] duration-300 ease-in-out border border-gray-100 dark:border-slate-700">
-    <Icon className="h-7 w-7 text-teal-600 dark:text-teal-400 mb-3" />
-    <h3 className="text-md font-semibold text-gray-900 dark:text-gray-100 mb-1">{label}</h3>
-    <p className="text-xl font-bold text-gray-800 dark:text-gray-200">{value}</p>
-  </div>
+const PropertyListItem: React.FC<PropertyListItemProps> = ({ icon: Icon, label, value }) => (
+    <div className="flex justify-between items-center py-4 px-2 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors duration-150">
+        <div className="flex items-center gap-4">
+            <Icon className="h-5 w-5 text-teal-600 dark:text-teal-400 flex-shrink-0" />
+            <span className="text-lg font-medium text-gray-500 dark:text-gray-400">
+                {label}
+            </span>
+        </div>
+        <p className="text-lg font-bold text-gray-800 dark:text-gray-200">
+            {value}
+        </p>
+    </div>
 );

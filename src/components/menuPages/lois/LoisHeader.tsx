@@ -1,7 +1,4 @@
-// src/components/menuPages/loi/LoisHeader.tsx
-
 "use client";
-
 import { Search, FileText, LayoutGrid, List } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";

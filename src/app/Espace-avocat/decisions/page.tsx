@@ -1,38 +1,80 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo, useCallback } from "react"; 
 import { useRouter } from "next/navigation";
-import { Pagination } from "@/components/Pagination";
-import { Spinner } from "@/components/ui/shadcn-io/spinner";
-import { useDecisions } from "@/hooks/decisions/useDecisions";
-import { DecisionHeader, DecisionList } from "@/components/menuPages/decisions";
+import { Pagination } from "@/components/Pagination"; 
+import { Spinner } from "@/components/ui/shadcn-io/spinner"; 
+import { useDecisions } from "@/hooks/decisions/useDecisions"; 
+import { DecisionHeader, DecisionList } from "@/components/menuPages/decisions"; 
+import { DecisionsFilters } from "@/types"; 
+
+type ViewMode = "table" | "card";
 
 export default function DecisionsPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [localSearch, setLocalSearch] = useState("");
-  const [viewMode, setViewMode] = useState<"table" | "card">("table");
-  const [filters, setFilters] = useState({}); 
-
+  const [viewMode, setViewMode] = useState<ViewMode>("table");
+  
+  const [dateMin, setDateMin] = useState(""); 
+  const [dateMax, setDateMax] = useState(""); 
+  
+  // NOUVEAU: État pour l'ordre de tri
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc'); 
+  
   const router = useRouter();
+
+  // Objet de filtres pour l'API (inclut le tri)
+  const filters: DecisionsFilters = useMemo(() => ({
+    date_min: dateMin,
+    date_max: dateMax,
+    sort_order: sortOrder, 
+  }), [dateMin, dateMax, sortOrder]); 
 
   const { decisions, loading, error, totalPages, totalHits } = useDecisions(localSearch, currentPage, filters);
 
   const handleSelectDecision = (code: string) => {
-    // Le chemin doit inclure 'Espace-avocat' pour correspondre à votre structure de dossiers
     router.push(`/Espace-avocat/decisions/${code}`);
   };
+  
+  // Handler de tri (utilise useCallback)
+  const handleSortChange = useCallback((order: 'asc' | 'desc') => {
+    setSortOrder(order);
+    setCurrentPage(1); 
+  }, []);
+
+  // Handler de recherche (utilise useCallback)
+  const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setLocalSearch(e.target.value);
+    setCurrentPage(1);
+  }, []);
+  
+  // Handler de filtres de date (utilise useCallback)
+  const handleDateFilterChange = useCallback((type: 'date_min' | 'date_max', value: string) => {
+    if (type === 'date_min') {
+      setDateMin(value);
+    } else {
+      setDateMax(value);
+    }
+    setCurrentPage(1);
+  }, []);
+
 
   return (
     <div className="bg-slate-50 dark:bg-slate-900 min-h-screen text-slate-900 dark:text-slate-50 p-4 sm:p-8">
       <div className="container mx-auto max-w-screen-xl">
         <DecisionHeader
           localSearch={localSearch}
-          onSearchChange={(e) => {
-            setLocalSearch(e.target.value);
-            setCurrentPage(1);
-          }}
+          onSearchChange={handleSearchChange}
           viewMode={viewMode}
           onViewModeChange={setViewMode}
+          
+          dateMin={dateMin}
+          dateMax={dateMax}
+          onDateChange={handleDateFilterChange}
+          
+          // L'AJOUT CRITIQUE pour corriger l'erreur:
+          sortOrder={sortOrder}
+          onSortChange={handleSortChange}
         />
 
         <main className="mt-6">

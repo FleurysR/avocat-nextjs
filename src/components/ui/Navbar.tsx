@@ -49,13 +49,18 @@ export function Navbar({ onToggle, isSidebarOpen }: NavbarProps) {
           <Sheet>
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon" className="md:hidden">
-                <MenuIcon className="h-6 w-6 text-gray-500 dark:text-gray-300" />
+                {/* Couleur neutre pour le menu mobile, mais ajout du hover Bleu Royal */}
+                <MenuIcon className="h-6 w-6 text-gray-500 dark:text-gray-300 hover:text-sidebar-primary" />
               </Button>
             </SheetTrigger>
+            {/* Le contenu de la Sheet mobile peut être neutralisé ou utiliser une couleur plus sombre */}
             <SheetContent
               side="left"
               className="w-64 border-r border-gray-200 dark:border-slate-700 bg-gray-100 dark:bg-slate-900 p-4"
             >
+              {/* NOTE: Les liens dans la nav mobile (Accueil, Dossiers...) utilisent
+                   les couleurs du texte par défaut pour rester neutres. 
+                   Si vous souhaitez les colorer en Bleu Royal, modifiez les classes text-gray-700. */}
               <nav className="flex flex-col space-y-4">
                 <a
                   href="/Espace-avocat"
@@ -80,6 +85,7 @@ export function Navbar({ onToggle, isSidebarOpen }: NavbarProps) {
                 <Label htmlFor="dark-mode-mobile" className="text-sm text-gray-700 dark:text-gray-300">
                   Mode sombre
                 </Label>
+                {/* Le Switch utilise la couleur d'accentuation (Bleu Royal) par défaut */}
                 <Switch
                   id="dark-mode-mobile"
                   checked={theme === "dark"}
@@ -90,11 +96,13 @@ export function Navbar({ onToggle, isSidebarOpen }: NavbarProps) {
           </Sheet>
 
           <div className="hidden md:flex items-center">
+            {/* MODIFIÉ : Bouton de bascule de la sidebar en Bleu Royal */}
             <Button
               variant="ghost"
               size="icon"
               onClick={onToggle}
-              className="w-10 h-10 rounded-full text-gray-500 dark:text-gray-300"
+              // Ajout de la couleur Bleu Royal comme couleur par défaut du bouton
+              className="w-10 h-10 rounded-full text-sidebar-primary dark:text-sidebar-primary/80 hover:bg-gray-200 dark:hover:bg-slate-800"
             >
               {isSidebarOpen ? <PanelLeftClose /> : <PanelRightOpen />}
             </Button>
@@ -117,12 +125,14 @@ export function Navbar({ onToggle, isSidebarOpen }: NavbarProps) {
           >
             Mode sombre
           </Label>
+          {/* Le Switch utilise la couleur d'accentuation par défaut (Bleu Royal) */}
           <Switch
             id="dark-mode-desktop"
             checked={theme === "dark"}
             onCheckedChange={handleThemeChange}
           />
-          <Button variant="ghost" size="icon" onClick={() => handleThemeChange(theme !== "dark")} className="text-gray-500 dark:text-gray-300">
+          {/* Icône Soleil/Lune : Ajout du hover Bleu Royal */}
+          <Button variant="ghost" size="icon" onClick={() => handleThemeChange(theme !== "dark")} className="text-gray-500 dark:text-gray-300 hover:text-sidebar-primary">
             {theme === "dark" ? <Moon /> : <Sun />}
           </Button>
         </div>

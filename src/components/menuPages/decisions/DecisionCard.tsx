@@ -1,4 +1,5 @@
 // src/components/decisions/DecisionCard.tsx
+
 import { Decision } from "@/types";
 import { highlightText } from "../../utils/highlightText";
 import { Badge } from "@/components/ui/badge";
@@ -24,7 +25,8 @@ export function DecisionCard({ decision, searchTerm }: DecisionCardProps) {
                      hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 cursor-pointer 
                      flex flex-col h-full"
         >
-          <h2 className="text-xl font-semibold text-indigo-700 dark:text-indigo-400 mb-2 line-clamp-2">
+          {/* MODIFIÉ : Titre en Bleu Royal */}
+          <h2 className="text-xl font-semibold text-sidebar-primary dark:text-sidebar-primary/80 mb-2 line-clamp-2">
             {highlightText(objet, searchTerm)}
           </h2>
 

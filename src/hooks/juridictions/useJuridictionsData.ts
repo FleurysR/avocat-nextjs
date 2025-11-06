@@ -5,7 +5,8 @@ import { Juridiction, JuridictionsApiResponse } from "@/types";
 import { useSearch } from "@/components/context/SearchContext";
 import { toast } from "sonner";
 
-const PAGE_SIZE = 5;
+// 🚀 NOUVELLE CONSTANTE : Utilisation de la limite par défaut définie dans le fetch.
+const API_LIMIT = 10; 
 
 export const useJuridictionsData = () => {
   const [juridictions, setJuridictions] = useState<Juridiction[]>([]);
@@ -18,6 +19,7 @@ export const useJuridictionsData = () => {
   const { searchTerm } = useSearch();
 
   useEffect(() => {
+    // Réinitialise la page à 1 à chaque nouvelle recherche
     setCurrentPage(1);
   }, [searchTerm]);
 
@@ -27,9 +29,10 @@ export const useJuridictionsData = () => {
       setError(null);
 
       try {
-        // ✅ Correction : on retire l'argument PAGE_SIZE
+        // ✅ Correction : Appel de fetchJuridictions avec searchTerm, API_LIMIT (10) et currentPage
         const data: JuridictionsApiResponse = await fetchJuridictions(
           searchTerm,
+          API_LIMIT, 
           currentPage
         );
 
@@ -43,7 +46,10 @@ export const useJuridictionsData = () => {
         setJuridictions(uniqueJuridictions);
 
         setTotalItems(data.totalItems || 0);
-        setTotalPages(Math.ceil((data.totalItems || 0) / PAGE_SIZE));
+        
+        // ✅ CORRECTION CLÉ : Calcul des pages totales basé sur l'API_LIMIT (10)
+        setTotalPages(Math.ceil((data.totalItems || 0) / API_LIMIT)); 
+        
       } catch (err) {
         console.error(err);
         setError("Erreur lors de la récupération des juridictions.");

@@ -26,16 +26,27 @@ import {
 
 } from "@/types";
 
+/**
+ * Récupère les décisions avec pagination et filtres.
+ * Calcule l'offset sur le front-end pour un back-end qui attend 'offset'.
+ * Intègre la gestion des erreurs de réseau et de timeout (408).
+ */
 export const fetchDecisions = async (
     query = '', 
     limit = 10, 
     page = 1,
     filters: DecisionsFilters = {} 
-) => {
+): Promise<DecisionsApiResponse | { hits: [], limit: number, offset: number, estimatedTotalHits: number }> => {
+    
+    // Calcul de l'offset nécessaire pour le back-end
+    // L'offset est le décalage, calculé comme (page - 1) * limit
+    const offset = Math.max(0, page - 1) * limit; // Utilise Math.max pour s'assurer que l'offset n'est pas négatif
+
     // Les paramètres de base pour la requête
     const params: Record<string, string | number> = { 
         limit, 
-        page 
+        // IMPORTANT : On envoie 'offset' au lieu de 'page'
+        offset 
     };
     
     // Ajoutez le paramètre de recherche si la requête n'est pas vide
@@ -50,8 +61,28 @@ export const fetchDecisions = async (
         }
     });
 
-    const response = await serverApiClient.get<DecisionsApiResponse>("/decisions", { params });
-    return response.data;
+    try {
+        const response = await serverApiClient.get<DecisionsApiResponse>("/decisions", { params });
+        return response.data;
+    } catch (error: any) {
+        // En cas d'erreur réseau, de timeout (comme le 408) ou d'échec de l'API
+        console.error("Erreur lors de la récupération des décisions:", error);
+        
+        // Gérer spécifiquement le Timeout (408)
+        if (error.response && error.response.status === 408) {
+            console.warn("La recherche a expiré (Timeout 408). Veuillez affiner votre requête.");
+            // Loggez ou utilisez un système de notification d'interface utilisateur ici
+        }
+        
+        // Retourner un objet de réponse vide mais structuré pour éviter de faire planter l'UI
+        return {
+            hits: [],
+            limit: limit,
+            offset: offset,
+            estimatedTotalHits: 0,
+            // Ajoutez d'autres champs si votre type DecisionsApiResponse en contient d'obligatoires
+        };
+    }
 };
 
 
@@ -115,9 +146,7 @@ export const fetchChambresJuridiques = async () => {
     return response.data.member;
 };
 
-/**
- * Avocats
- */
+
 export const fetchAvocats = async (
     query: string = '', 
     sortField: 'nom' | 'ville' | null = null, // MODIFIÉ
@@ -266,6 +295,20 @@ export async function fetchDossierStrategies(): Promise<DossierStrategyApiRespon
   const response = await serverApiClient.get<DossierStrategyApiResponse>("/dossier_strategies");
   return response.data;
 }
+/**
+ * 🚀 EXPORTER UNE DÉCISION EN PDF 🚀
+ */
+export const exportDecisionPdf = async (code: string): Promise<Blob> => {
+    try {
+        const response = await serverApiClient.get<Blob>(`/decisions/${code}/export/pdf`, {
+            responseType: "blob", // pour récupérer un fichier binaire
+        });
+        return response.data;
+    } catch (error) {
+        console.error("Erreur lors de l'exportation du PDF de la décision :", error);
+        throw error;
+    }
+};
 
 /**
  * 🚀 NOUVELLE FONCTION DE RECHERCHE GLOBALE 🚀

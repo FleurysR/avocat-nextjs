@@ -3,12 +3,16 @@
 
 import { useState } from "react";
 import { useRouter } from 'next/navigation';
+import { useSelector } from "react-redux";
+import { RootState } from "@/store/store"; // <-- ton type root state
 import DetailItem from "@/components/DetailItem";
-import { ChevronDownIcon, ClipboardDocumentIcon, ArrowLeftIcon } from "@heroicons/react/24/outline";
+import { ChevronDownIcon, ClipboardDocumentIcon, ArrowLeftIcon, ArrowDownTrayIcon } from "@heroicons/react/24/outline";
 
 interface DetailedDecision {
+  id?: number;
   objet?: string;
   numero?: string;
+  code: string; 
   numeroDossier?: string;
   juridiction?: { designation: string };
   matiere?: string;
@@ -43,6 +47,9 @@ export default function DecisionDetailsPage({
   const [contentVisible, setContentVisible] = useState(false);
   const router = useRouter();
 
+  // ✅ Récupération du token depuis Redux
+  const token = useSelector((state: RootState) => state.auth.token);
+
   const formattedDate = detailedDecision?.decisionAt
     ? new Date(detailedDecision.decisionAt).toLocaleDateString("fr-FR", {
         year: 'numeric',
@@ -62,21 +69,68 @@ export default function DecisionDetailsPage({
     }
   };
 
+  const handleDownloadPdf = async () => {
+    try {
+      const response = await fetch("/api/pdf-decision", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: detailedDecision.code }), // on passe le code pour générer le PDF
+      });
+
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `decision_${detailedDecision.code}.pdf`;
+        a.click();
+        window.URL.revokeObjectURL(url);
+        return;
+      }
+
+      let errorMessage: string;
+      const contentType = response.headers.get("content-type") || "";
+      if (contentType.includes("application/json")) {
+        const errorData = await response.json();
+        errorMessage = errorData?.error || response.statusText;
+      } else {
+        errorMessage = await response.text();
+      }
+
+      console.error("Erreur téléchargement PDF :", errorMessage);
+      alert(`Erreur lors du téléchargement du PDF : ${errorMessage}`);
+    } catch (err) {
+      console.error("Erreur téléchargement PDF :", err);
+      alert("Erreur lors du téléchargement du PDF");
+    }
+  };
+
   return (
     <div className="bg-gray-50 dark:bg-gray-900 min-h-screen">
-      {/* Sticky Header avec Bouton de retour */}
+      {/* Sticky Header avec Boutons */}
       <header className="sticky top-0 z-10 bg-white dark:bg-slate-950 shadow-md py-4 px-8 border-b border-gray-200 dark:border-gray-800">
-        <div className="flex items-center space-x-4">
-          <button 
-            onClick={() => router.back()} 
-            className="flex items-center text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-200 transition-colors"
-            aria-label="Retour à la page précédente"
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-4">
+            <button 
+              onClick={() => router.back()} 
+              className="flex items-center text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-200 transition-colors"
+              aria-label="Retour à la page précédente"
+            >
+              <ArrowLeftIcon className="h-6 w-6" />
+            </button>
+            <h1 className="text-xl font-bold text-gray-900 dark:text-gray-50 truncate">
+              {detailedDecision.objet || "Décision sans objet"}
+            </h1>
+          </div>
+
+          {/* Bouton PDF */}
+          <button
+            onClick={handleDownloadPdf}
+            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 text-white rounded-lg transition-colors"
           >
-            <ArrowLeftIcon className="h-6 w-6" />
+            <ArrowDownTrayIcon className="h-5 w-5" />
+            Télécharger PDF
           </button>
-          <h1 className="text-xl font-bold text-gray-900 dark:text-gray-50 truncate">
-            {detailedDecision.objet || "Décision sans objet"}
-          </h1>
         </div>
       </header>
 
@@ -85,10 +139,10 @@ export default function DecisionDetailsPage({
         {/* Titre et numéros de la décision */}
         <div className="bg-white dark:bg-slate-950 p-6 rounded-xl shadow-lg border border-gray-100 dark:border-gray-800">
           <p className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">
-            Décision n° {detailedDecision.numero}
+            Décision n° {detailedDecision.numero || "-"}
           </p>
           <p className="mt-2 text-lg text-gray-600 dark:text-gray-400">
-            Dossier n° {detailedDecision.numeroDossier}
+            Dossier n° {detailedDecision.numeroDossier || "-"}
           </p>
         </div>
 
@@ -100,12 +154,12 @@ export default function DecisionDetailsPage({
             <section className="bg-white dark:bg-slate-950 p-6 rounded-xl shadow-lg border border-gray-100 dark:border-gray-800">
               <h2 className="text-2xl font-bold mb-4 text-indigo-600 dark:text-indigo-400 border-b border-gray-200 dark:border-gray-700 pb-2">Généralités</h2>
               <ul>
-                <DetailItem label="Juridiction" value={detailedDecision.juridiction?.designation} />
-                <DetailItem label="Matière" value={detailedDecision.matiere} />
+                <DetailItem label="Juridiction" value={detailedDecision.juridiction?.designation || "-"} />
+                <DetailItem label="Matière" value={detailedDecision.matiere || "-"} />
                 <DetailItem label="Date de la décision" value={formattedDate} />
-                <DetailItem label="Formation Judiciaire" value={detailedDecision.formationJudiciaire?.designation} />
-                <DetailItem label="Chambre" value={detailedDecision.chambre?.designation} />
-                <DetailItem label="Président de Chambre" value={detailedDecision.presidentChambre} />
+                <DetailItem label="Formation Judiciaire" value={detailedDecision.formationJudiciaire?.designation || "-"} />
+                <DetailItem label="Chambre" value={detailedDecision.chambre?.designation || "-"} />
+                <DetailItem label="Président de Chambre" value={detailedDecision.presidentChambre || "-"} />
               </ul>
             </section>
 
@@ -113,11 +167,11 @@ export default function DecisionDetailsPage({
             <section className="bg-white dark:bg-slate-950 p-6 rounded-xl shadow-lg border border-gray-100 dark:border-gray-800">
               <h2 className="text-2xl font-bold mb-4 text-indigo-600 dark:text-indigo-400 border-b border-gray-200 dark:border-gray-700 pb-2">Parties</h2>
               <ul>
-                <DetailItem label="Demandeur" value={detailedDecision.nomDemandeur} />
-                <DetailItem label="Avocat Demandeur" value={detailedDecision.avocatDemandeur} />
-                <DetailItem label="Défendeur" value={detailedDecision.nomDefendeur} />
-                <DetailItem label="Avocat Défendeur" value={detailedDecision.avocatDefendeur} />
-                <DetailItem label="Solution" value={detailedDecision.solution?.designation} />
+                <DetailItem label="Demandeur" value={detailedDecision.nomDemandeur || "-"} />
+                <DetailItem label="Avocat Demandeur" value={detailedDecision.avocatDemandeur || "-"} />
+                <DetailItem label="Défendeur" value={detailedDecision.nomDefendeur || "-"} />
+                <DetailItem label="Avocat Défendeur" value={detailedDecision.avocatDefendeur || "-"} />
+                <DetailItem label="Solution" value={detailedDecision.solution?.designation || "-"} />
                 <DetailItem
                   label="Solution Totale"
                   value={detailedDecision.isSolutionTotal !== undefined ? (detailedDecision.isSolutionTotal ? "Oui" : "Non") : "-"}
@@ -128,7 +182,6 @@ export default function DecisionDetailsPage({
 
           {/* Colonne de droite - Contenu principal */}
           <div className="lg:col-span-2 space-y-8">
-            {/* Section Principe Juridique et Actions */}
             {detailedDecision.principeJuridique && (
               <section className="bg-white dark:bg-slate-950 p-6 rounded-xl shadow-lg border border-gray-100 dark:border-gray-800">
                 <div className="flex justify-between items-center mb-4 border-b border-gray-200 dark:border-gray-700 pb-2">
@@ -146,7 +199,6 @@ export default function DecisionDetailsPage({
               </section>
             )}
 
-            {/* Section Contenu Complet (avec accordéon) */}
             {detailedDecision.realContent && (
               <section className="bg-white dark:bg-slate-950 p-6 rounded-xl shadow-lg border border-gray-100 dark:border-gray-800">
                 <div className="flex justify-between items-center cursor-pointer" onClick={() => setContentVisible(!contentVisible)}>
@@ -161,30 +213,43 @@ export default function DecisionDetailsPage({
               </section>
             )}
 
-            {/* Section Mots-clés & Termes Contextuels */}
+            {/* Mots-clés et termes */}
             <section className="bg-white dark:bg-slate-950 p-6 rounded-xl shadow-lg border border-gray-100 dark:border-gray-800">
               <h2 className="text-2xl font-bold mb-4 text-indigo-600 dark:text-indigo-400 border-b border-gray-200 dark:border-gray-700 pb-2">Mots-clés & Termes</h2>
-              {(detailedDecision.keywords && detailedDecision.keywords.length > 0) && (
+
+              {detailedDecision.keywords && detailedDecision.keywords.length > 0 && (
                 <div className="mb-4">
                   <h3 className="font-semibold text-lg text-gray-700 dark:text-gray-300 mb-2">Mots-clés:</h3>
                   <div className="flex flex-wrap gap-2">
                     {detailedDecision.keywords.map((k, idx) => (
-                      <span key={idx} className="px-3 py-1 bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-100 rounded-full text-sm font-medium transition-colors">{k}</span>
+                      <span
+                        key={idx}
+                        className="px-3 py-1 bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-100 rounded-full text-sm font-medium transition-colors"
+                      >
+                        {k}
+                      </span>
                     ))}
                   </div>
                 </div>
               )}
-              {(detailedDecision.contextualTerms && detailedDecision.contextualTerms.length > 0) && (
+
+              {detailedDecision.contextualTerms && detailedDecision.contextualTerms.length > 0 && (
                 <div>
                   <h3 className="font-semibold text-lg text-gray-700 dark:text-gray-300 mb-2">Termes Contextuels:</h3>
                   <div className="flex flex-wrap gap-2">
                     {detailedDecision.contextualTerms.map((t, idx) => (
-                      <span key={idx} className="px-3 py-1 bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100 rounded-full text-sm font-medium transition-colors">{t}</span>
+                      <span
+                        key={idx}
+                        className="px-3 py-1 bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100 rounded-full text-sm font-medium transition-colors"
+                      >
+                        {t}
+                      </span>
                     ))}
                   </div>
                 </div>
               )}
             </section>
+
           </div>
         </div>
       </div>
