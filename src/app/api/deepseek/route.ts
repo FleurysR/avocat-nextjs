@@ -1,5 +1,4 @@
 // api/deepseek/route.ts
-
 import { NextResponse } from "next/server";
 import OpenAI from "openai";
 
@@ -19,15 +18,15 @@ export async function POST(req: Request) {
       );
     }
 
-    // ⭐ La clé du streaming est ici
+    // ⭐ Activation du mode streaming
     const stream = await client.chat.completions.create({
-      model: "deepseek-chat",
+      model: "deepseek-chat", 
       messages,
-      stream: true, // IMPORTANT : active le mode streaming
+      stream: true, 
     });
 
-    // Retourne le flux de données directement
-    return new NextResponse(stream.toReadableStream());
+    // Retourne le flux de données directement, ce que le client doit lire chunk par chunk
+    return new NextResponse(stream.toReadableStream()); 
   } catch (error: any) {
     console.error("Erreur DeepSeek API :", error);
     return NextResponse.json(

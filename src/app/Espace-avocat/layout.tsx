@@ -5,8 +5,11 @@
 import { ReactNode, useState } from "react";
 import { Navbar } from "@/components/ui/Navbar";
 import AppSidebar from "@/components/app-sidebar";
-import { SearchProvider } from "@/components/context/SearchContext";
+// 💡 MODIFIÉ : Utiliser UNIQUEMENT le GlobalSearchProvider
+import { GlobalSearchProvider } from "@/components/context/GlobalSearchContext"; 
 import ToasterProvider from "@/components/ProviderToaster";
+// 💡 SUPPRIMER : import { SearchProvider } from "@/components/context/SearchContext"; 
+
 
 interface LayoutProps {
   children: ReactNode;
@@ -33,11 +36,11 @@ function AppLayoutContent({ children }: { children: ReactNode }) {
 
 export default function EspaceAvocatLayout({ children }: LayoutProps) {
   return (
-    // Wrap your application with the correct providers
     <ToasterProvider attribute="class" defaultTheme="system" enableSystem>
-      <SearchProvider>
+      {/* 💡 CORRECTION : Utiliser le GlobalSearchProvider pour englober la Navbar */}
+      <GlobalSearchProvider>
         <AppLayoutContent>{children}</AppLayoutContent>
-      </SearchProvider>
+      </GlobalSearchProvider>
     </ToasterProvider>
   );
 }

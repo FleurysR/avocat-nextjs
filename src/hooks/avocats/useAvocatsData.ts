@@ -3,7 +3,8 @@
 import { useState, useEffect } from "react";
 import { fetchAvocats } from "@/services/client-api";
 import { Avocat, AvocatsApiResponse } from "@/types";
-import { useSearch } from "@/components/context/SearchContext";
+// 💡 SUPPRESSION DE L'IMPORTATION DU CONTEXTE PARTAGÉ/GLOBAL
+// import { useSearch } from "@/components/context/SearchContext"; 
 import { useDebounce } from "@/components/context/useDebounce";
 import { toast } from "sonner";
 
@@ -19,27 +20,28 @@ export const useAvocatsData = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const [sortField, setSortField] = useState<SortField>(null); // NOUVEL ÉTAT
+  const [sortField, setSortField] = useState<SortField>(null); 
   const [sortOrder, setSortOrder] = useState<SortOrder>(null);
 
-  const { searchTerm } = useSearch();
+  // 💡 NOUVEAU : État de recherche LOCAL
+  const [searchTerm, setSearchTerm] = useState(""); 
   const debouncedSearch = useDebounce(searchTerm, 400);
 
   // Logique pour gérer le tri
   const onSortChange = (field: "nom" | "ville") => {
-    // Si l'utilisateur clique sur la même colonne, on inverse l'ordre
     if (sortField === field) {
       setSortOrder(prev => (prev === "asc" ? "desc" : "asc"));
     } else {
-      // Sinon, on trie par cette nouvelle colonne en ordre ascendant
       setSortField(field);
       setSortOrder("asc");
     }
   };
+
   // Réinitialise la pagination à chaque changement
   useEffect(() => {
     setCurrentPage(1);
   }, [debouncedSearch, sortField, sortOrder]);
+
   // Appelle l'API lorsque la page, la recherche ou le tri change
   useEffect(() => {
     const loadAvocats = async () => {
@@ -66,6 +68,8 @@ export const useAvocatsData = () => {
     };
     loadAvocats();
   }, [currentPage, debouncedSearch, sortField, sortOrder]);
+
+  // Le retour expose les états locaux
   return {
     avocats,
     currentPage,
@@ -74,10 +78,11 @@ export const useAvocatsData = () => {
     totalItems,
     loading,
     error,
+    searchTerm,       
+    setSearchTerm,    
     debouncedSearch,
     sortField,
     sortOrder,
     onSortChange,
   };
-  
 };

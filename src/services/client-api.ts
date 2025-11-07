@@ -312,49 +312,74 @@ export const exportDecisionPdf = async (code: string): Promise<Blob> => {
 
 /**
  * 🚀 NOUVELLE FONCTION DE RECHERCHE GLOBALE 🚀
+ * Effectue des appels API parallèles pour récupérer les avocats, décisions et articles de loi.
+ * Gère les erreurs de formatage des réponses (undefined 'hits' ou 'member').
+ */
+
+/**
+ * 🚀 NOUVELLE FONCTION DE RECHERCHE GLOBALE 🚀
+ * Effectue des appels API parallèles pour récupérer les avocats, décisions et articles de loi.
+ * AJUSTEMENT : Tente de restreindre la recherche d'avocats aux champs nom/prénom.
  */
 export const globalSearch = async (query: string): Promise<GlobalSearchResult[]> => {
     if (!query) return [];
 
     try {
+        const encodedQuery = encodeURIComponent(query);
+
         const [
             avocatsResponse, 
             decisionsResponse, 
             loisArticlesResponse
         ] = await Promise.all([
-            serverApiClient.get<AvocatsApiResponse>(`/avocats?query=${encodeURIComponent(query)}&limit=10`),
-            serverApiClient.get<DecisionsApiResponse>(`/decisions?query=${encodeURIComponent(query)}&limit=10`),
-            serverApiClient.get<LoiArticleApiResponse>(`/loi_articles?query=${encodeURIComponent(query)}&limit=10`)
+            // 💡 MISE À JOUR : Ajout du paramètre pour tenter de limiter la recherche aux noms/prénoms
+            // Le succès dépend de l'implémentation de votre endpoint /avocats.
+            serverApiClient.get<AvocatsApiResponse>(`/avocats?query=${encodedQuery}&limit=10&searchFields=nom,prenoms`), 
+            
+            serverApiClient.get<DecisionsApiResponse>(`/decisions?query=${encodedQuery}&limit=10`),
+            serverApiClient.get<LoiArticleApiResponse>(`/loi_articles?query=${encodedQuery}&limit=10`)
         ]);
 
         const formattedResults: GlobalSearchResult[] = [];
 
-        avocatsResponse.data.member.forEach((avocat: Avocat) => {
-            formattedResults.push({
-                id: avocat.code,
-                title: `${avocat.nom} ${avocat.prenoms}`,
-                type: "avocat",
-                details: avocat,
+        // --- 1. AVOCATS ---
+        const avocatsMember = avocatsResponse.data?.member;
+        if (avocatsMember && Array.isArray(avocatsMember)) { // Correction du TypeError
+            avocatsMember.forEach((avocat: Avocat) => {
+                formattedResults.push({
+                    id: avocat.code,
+                    title: `${avocat.nom} ${avocat.prenoms}`,
+                    type: "avocat",
+                    details: avocat,
+                });
             });
-        });
+        }
 
-        decisionsResponse.data.hits.forEach(decision => {
-            formattedResults.push({
-                id: decision.code,
-                title: decision.objet || `Décision n° ${decision.numeroDossier}`,
-                type: "decision",
-                details: decision,
+        // --- 2. DÉCISIONS ---
+        const decisionsHits = decisionsResponse.data?.hits;
+        if (decisionsHits && Array.isArray(decisionsHits)) { // Correction du TypeError
+             decisionsHits.forEach(decision => {
+                formattedResults.push({
+                    id: decision.code,
+                    title: decision.objet || `Décision n° ${decision.numeroDossier}`,
+                    type: "decision",
+                    details: decision,
+                });
             });
-        });
-
-        loisArticlesResponse.data.hits.forEach((article: LoiArticle) => {
-            formattedResults.push({
-                id: article.code,
-                title: `Loi Article n° ${article.numero}`,
-                type: "article",
-                details: article,
+        }
+        
+        // --- 3. LOIS / ARTICLES ---
+        const loisHits = loisArticlesResponse.data?.hits;
+        if (loisHits && Array.isArray(loisHits)) { // Correction du TypeError
+            loisHits.forEach((article: LoiArticle) => {
+                formattedResults.push({
+                    id: article.code,
+                    title: `Loi Article n° ${article.numero}`,
+                    type: "article",
+                    details: article,
+                });
             });
-        });
+        }
 
         return formattedResults;
     } catch (error) {
@@ -362,3 +387,4 @@ export const globalSearch = async (query: string): Promise<GlobalSearchResult[]>
         return [];
     }
 };
+

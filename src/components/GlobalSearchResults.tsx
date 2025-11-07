@@ -1,117 +1,176 @@
+// src/components/GlobalSearchResults.tsx
+
 "use client";
-import { useSearch } from "@/components/context/SearchContext";
-import { Spinner } from "@/components/ui/shadcn-io/spinner";
-import Link from "next/link";
-import { GlobalSearchResult } from "@/types";
-import { ChevronRight } from "lucide-react"; // 🚀 Importation de l'icône ChevronRight
 
-// Correction des erreurs de type dans la fonction utilitaire
-function groupResultsByType(results: GlobalSearchResult[]) {
-    const grouped: { [key: string]: GlobalSearchResult[] } = {
-        avocat: [],
-        decision: [],
-        loi: [],
-        article: [],
+import { AlertTriangle, Search, FileText, Scale, Gavel } from 'lucide-react';
+import { useGlobalSearch } from '@/components/context/GlobalSearchContext'; 
+import { useDebounce } from '@/components/context/useDebounce'; 
+import { useState, useEffect, useMemo } from 'react'; // 💡 AJOUT DE useMemo
+import { globalSearch } from '@/services/client-api'; 
+
+// --- Définitions de types pour la recherche globale ---
+type ResultType = 'avocat' | 'article' | 'decision';
+
+interface SearchResult {
+    type: ResultType;
+    title: string;
+    details: any; 
+    id: string;
+}
+
+// 💡 NOUVEAU TYPE pour les résultats regroupés
+interface GroupedResults {
+    [key: string]: {
+        count: number;
+        items: SearchResult[];
+        icon: React.ElementType;
+        label: string;
     };
-    results.forEach((item) => {
-        if (grouped[item.type]) {
-            grouped[item.type].push(item);
-        }
-    });
-    return grouped;
 }
 
-// Fonction pour obtenir le titre en français
-function getCategoryTitle(type: string) {
-  switch (type) {
-    case 'avocat': return 'Avocats';
-    case 'decision': return 'Décisions';
-    case 'loi': return 'Lois';
-    case 'article': return 'Articles de loi';
-    default: return 'Autres résultats';
-  }
-}
-
+// --- Composant Principal ---
 export function GlobalSearchResults() {
-    const { searchTerm, results, loading } = useSearch();
+  
+  const { globalSearch: globalSearchTerm } = useGlobalSearch(); 
+  const debouncedSearchTerm = useDebounce(globalSearchTerm, 500);
 
-    if (!searchTerm) {
-        return null;
+  const [results, setResults] = useState<SearchResult[]>([]); 
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Logique de recherche (invariante)
+  useEffect(() => {
+    if (!debouncedSearchTerm) { 
+      setResults([]);
+      return;
     }
 
-    if (loading) {
-        return (
-            <div className="flex justify-center p-8">
-                <Spinner variant="ring" size={48} />
-            </div>
-        );
-    }
+    const fetchGlobalResults = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const apiResults = await globalSearch(debouncedSearchTerm);
+        setResults(apiResults as SearchResult[]); 
+      } catch (err) {
+        console.error("Erreur lors de la recherche globale (Service):", err);
+        setError("Échec du chargement des résultats de recherche. Veuillez vérifier le service API.");
+      } finally {
+        setLoading(false);
+      }
+    };
 
-    if (!results || results.length === 0) {
-        return (
-            <div className="text-center p-8 text-gray-500 dark:text-gray-400">
-                Aucun résultat trouvé pour &quot;{searchTerm}&quot;.
-            </div>
-        );
-    }
+    fetchGlobalResults();
+  }, [debouncedSearchTerm]);
 
-    const groupedResults = groupResultsByType(results);
-    const hasResults = Object.values(groupedResults).some(arr => arr.length > 0);
 
-    if (!hasResults) {
-        return (
-            <div className="text-center p-8 text-gray-500 dark:text-gray-400">
-                Aucun résultat trouvé pour &quot;{searchTerm}&quot;.
-            </div>
-        );
-    }
+  // 🚀 NOUVEAU : Fonction de regroupement des résultats et de calcul des totaux
+  const groupedAndCountedResults: GroupedResults = useMemo(() => {
+    
+    // Définition de base avec les métadonnées (icônes et labels)
+    const initialGroups: GroupedResults = {
+      avocat: { count: 0, items: [], icon: Gavel, label: "Avocats" },
+      decision: { count: 0, items: [], icon: FileText, label: "Décisions" },
+      article: { count: 0, items: [], icon: Scale, label: "Articles de loi" },
+    };
 
-    return (
-        <div className="mt-4 p-6 bg-white dark:bg-slate-900 rounded-lg shadow-lg">
-            <h3 className="text-xl font-semibold mb-4">
-                Résultats pour &quot;{searchTerm}&quot;
+    return results.reduce((acc, result) => {
+      const type = result.type;
+      
+      // Assurez-vous que le type est valide
+      if (acc[type]) {
+        acc[type].count += 1;
+        acc[type].items.push(result);
+      }
+      return acc;
+    }, initialGroups);
+  }, [results]); // Recalculé uniquement lorsque l'état 'results' change
+
+  
+  // Calcul du nombre total pour l'affichage général
+  const totalResultsCount = results.length;
+
+
+  // Si la recherche globale est vide (effacée par l'utilisateur), on n'affiche rien.
+  if (!globalSearchTerm) {
+      return null;
+  }
+
+  // --- JSX (Affichage des résultats) ---
+  return (
+    <div className="absolute top-16 left-0 right-0 z-30 flex justify-center p-4">
+        <div className="w-full max-w-4xl bg-white dark:bg-slate-800 shadow-2xl rounded-xl border border-gray-200 dark:border-slate-700 p-6">
+            
+            <h3 className="text-xl font-bold text-sidebar-primary dark:text-indigo-400 mb-4 flex items-center gap-2">
+                <Search className="h-5 w-5" /> 
+                Résultats de la Recherche Globale
             </h3>
-            {Object.keys(groupedResults).map((type) => {
-                const categoryResults = groupedResults[type as keyof typeof groupedResults];
-                if (categoryResults.length === 0) {
-                    return null;
-                }
-                
-                // 🚀 Limiter l'affichage à 3 résultats
-                const limitedResults = categoryResults.slice(0, 3);
-                const hasMoreResults = categoryResults.length > 3;
+            
+            {/* ... (Loading et Error messages) ... */}
+            {loading && <p className="text-center text-gray-500">Recherche en cours...</p>}
+            
+            {error && (
+                <div className="flex items-center gap-2 text-red-500">
+                    <AlertTriangle className="h-5 w-5" /> {error}
+                </div>
+            )}
 
-                return (
-                    <div key={type} className="mb-6">
-                        <h4 className="text-lg font-bold mb-2 text-indigo-600 dark:text-indigo-400 flex items-center gap-2">
-                            {getCategoryTitle(type)} ({categoryResults.length})
-                        </h4>
-                        <ul className="space-y-3">
-                            {limitedResults.map((item) => (
-                                <li key={item.id} className="border-b dark:border-slate-700 pb-2 last:border-b-0">
-                                    <Link href={`/${item.type}/${item.id}`} className="block hover:bg-gray-50 dark:hover:bg-slate-800 rounded-md p-2 transition-colors">
-                                        <p className="text-lg font-medium">{item.title}</p>
-                                        <span className="text-sm text-gray-500 dark:text-gray-400 capitalize">
-                                            Type : {getCategoryTitle(item.type)}
-                                        </span>
-                                    </Link>
-                                </li>
-                            ))}
-                        </ul>
-                        {/* 🚀 Bouton "Voir plus" si plus de 3 résultats existent */}
-                        {hasMoreResults && (
-                            <div className="mt-2 text-right">
-                                <Link 
-                                    href={`/${type}`} 
-                                    className="inline-flex items-center text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-200 transition-colors"
-                                >
-                                    Voir tous les {categoryResults.length} résultats <ChevronRight className="h-4 w-4 ml-1" />
-                                </Link>
+            {!loading && !error && totalResultsCount === 0 && (
+                <p className="text-gray-500 dark:text-gray-400">Aucun résultat trouvé pour **"{globalSearchTerm}"**.</p>
+            )}
+
+            {!loading && totalResultsCount > 0 && (
+                <div className="space-y-6">
+                    <p className="text-sm text-gray-700 dark:text-gray-300 font-medium">
+                        **{totalResultsCount}** résultat{totalResultsCount > 1 ? "s" : ""} trouvé{totalResultsCount > 1 ? "s" : ""} pour **"{globalSearchTerm}"** :
+                    </p>
+                    
+                    {/* 🚀 AFFICHAGE DES GROUPES ET DES COMPTES */}
+                    {Object.keys(groupedAndCountedResults).map(key => {
+                        const group = groupedAndCountedResults[key];
+                        const Icon = group.icon; // Le composant icône
+                        
+                        // N'affiche le groupe que s'il contient des résultats
+                        if (group.count === 0) return null; 
+                        
+                        return (
+                            <div key={key} className="space-y-3">
+                                <h4 className="text-lg font-bold border-b border-sidebar-primary/20 dark:border-indigo-400/30 pb-1 flex items-center gap-2 text-sidebar-primary dark:text-indigo-400">
+                                    <Icon className="h-5 w-5" /> 
+                                    {group.label} ({group.count})
+                                </h4>
+                                
+                                {/* Affichage des 3 premiers résultats du groupe */}
+                                {group.items.slice(0, 3).map((result, index) => (
+                                    <a 
+                                        key={result.id || index} 
+                                        href={result.id ? `/Espace-avocat/avocatList/${result.id}` : '#'}
+                                        className="block p-3 border border-gray-100 dark:border-slate-700 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700 transition duration-150"
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            {/* Icône et contenu du résultat */}
+                                            <Icon className="h-5 w-5 opacity-70" />
+                                            <div>
+                                                <p className="font-semibold text-gray-900 dark:text-white">{result.title}</p>
+                                                <p className="text-sm text-gray-600 dark:text-gray-400 truncate">{result.details?.description || result.details?.objet || ""}</p>
+                                            </div>
+                                        </div>
+                                    </a>
+                                ))}
+
+                                {/* Lien "Voir tout" si plus de 3 résultats */}
+                                {group.count > 3 && (
+                                    <div className="text-right pt-2">
+                                        <a href={`/Espace-avocat/search-results?q=${globalSearchTerm}&type=${key}`} className="text-sm text-gray-500 dark:text-gray-400 hover:text-sidebar-primary hover:underline">
+                                            Voir les {group.count - 3} autres résultats {group.label.toLowerCase()} →
+                                        </a>
+                                    </div>
+                                )}
                             </div>
-                        )}
-                    </div>
-                );
-            })}
+                        );
+                    })}
+                </div>
+            )}
         </div>
-    );
+    </div>
+  );
 }

@@ -100,6 +100,11 @@ export interface DecisionDetails {
   anonymousContent: string;
   contextualTerms: string[];
 }
+export interface StatMatiere {
+    total: number;
+    gagne: number;
+    taux_succes_pourcentage: number;
+}
 /**
  * Décisions
  */
@@ -186,6 +191,11 @@ export interface AvocatDetails {
   lastActivityAt: string | null;
   biographie?: string; // 👈 Add the biographie field
   specialites?: Choice[]; // 👈 Add the specialites field
+  // Ajout des champs manquants
+    ancienneteEnAnnees?: number; // Optionnel
+    nombreDecisionsPlaidees: number;
+    tauxSuccesGlobalPourcentage: number;
+    tauxSuccesParMatiere: Record<string, StatMatiere>;
 }
 // ==============
 // Lois
