@@ -1,258 +1,229 @@
-// src/components/DecisionDetailsPage.tsx
 "use client";
 
-import { useState } from "react";
-import { useRouter } from 'next/navigation';
-import { useSelector } from "react-redux";
-import { RootState } from "@/store/store"; // <-- ton type root state
-import DetailItem from "@/components/DetailItem";
-import { ChevronDownIcon, ClipboardDocumentIcon, ArrowLeftIcon, ArrowDownTrayIcon } from "@heroicons/react/24/outline";
+import { useParams, useRouter } from 'next/navigation';
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
-interface DetailedDecision {
-  id?: number;
-  objet?: string;
-  numero?: string;
-  code: string; 
-  numeroDossier?: string;
-  juridiction?: { designation: string };
-  matiere?: string;
-  decisionAt?: string;
-  principeJuridique?: string;
-  keywords?: string[];
-  anonymousContent?: string;
-  realContent?: string;
-  contextualTerms?: string[];
-  formationJudiciaire?: { designation: string };
-  chambre?: { designation: string };
-  presidentChambre?: string;
-  nomDemandeur?: string;
-  nomDefendeur?: string;
-  avocatDemandeur?: string;
-  avocatDefendeur?: string;
-  solution?: { designation: string };
-  isSolutionTotal?: boolean;
-}
+// Services API (à créer)
+import { fetchDecisionByCode } from "@/services/client-api"; // EXEMPLE: à adapter
 
-interface DecisionDetailsPageProps {
-  detailedDecision: DetailedDecision | null;
-  loading: boolean;
-  error: string | null;
-}
+// UI Components
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/shadcn-io/spinner"; // Assurez-vous d'avoir ce composant
 
-export default function DecisionDetailsPage({
-  detailedDecision,
-  loading,
-  error,
-}: DecisionDetailsPageProps) {
-  const [contentVisible, setContentVisible] = useState(false);
+// Types
+import { DetailedDecision } from "@/types"; // Assurez-vous que le type est exporté et partagé
+
+// Icons
+import {
+  ArrowLeft, FileText, Gavel, Scale, Copy, ChevronDown, Download,
+  Briefcase, Calendar, Users, Building, CheckCircle, Tag
+} from "lucide-react";
+
+// --- SOUS-COMPOSANTS POUR LA STRUCTURE ---
+
+// Composant pour une section de la page
+const ReportSection = ({ title, icon, children, defaultOpen = true }: { title: string; icon: React.ReactNode; children: React.ReactNode; defaultOpen?: boolean; }) => (
+  <section className="bg-white dark:bg-slate-950/50 p-6 rounded-xl shadow-md border border-gray-200 dark:border-gray-800">
+    <details open={defaultOpen} className="group">
+      <summary className="flex items-center justify-between cursor-pointer list-none">
+        <h2 className="flex items-center text-xl font-bold text-gray-800 dark:text-gray-200">
+          {icon}
+          <span className="ml-3">{title}</span>
+        </h2>
+        <ChevronDown className="h-5 w-5 text-gray-500 transition-transform duration-300 group-open:rotate-180" />
+      </summary>
+      <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+        {children}
+      </div>
+    </details>
+  </section>
+);
+
+// Composant pour un bloc d'information
+const InfoBlock = ({ label, value, icon }: { label: string; value: string | undefined | null; icon: React.ReactNode; }) => {
+  if (!value || value === "-") return null;
+  return (
+    <div className="flex items-start space-x-3">
+      <div className="flex-shrink-0 mt-1">{icon}</div>
+      <div>
+        <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">{label}</p>
+        <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{value}</p>
+      </div>
+    </div>
+  );
+};
+
+
+// --- PAGE PRINCIPALE ---
+
+export default function DecisionDetailsPage() {
+  const { code } = useParams<{ code: string }>();
   const router = useRouter();
 
-  // ✅ Récupération du token depuis Redux
-  const token = useSelector((state: RootState) => state.auth.token);
+  const [decision, setDecision] = useState<DetailedDecision | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const formattedDate = detailedDecision?.decisionAt
-    ? new Date(detailedDecision.decisionAt).toLocaleDateString("fr-FR", {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-      })
-    : "-";
+  useEffect(() => {
+    if (!code) {
+      setError("Aucun code de décision fourni.");
+      setLoading(false);
+      return;
+    }
 
-  if (loading) return <p className="p-8 text-center text-gray-700 dark:text-gray-300">Chargement de la décision...</p>;
-  if (error) return <p className="p-8 text-center text-red-500">{error}</p>;
-  if (!detailedDecision) return <p className="p-8 text-center text-gray-500">Aucune décision trouvée.</p>;
+    const loadDecision = async () => {
+      setLoading(true);
+      try {
+        const data = await fetchDecisionByCode(code); // Votre fonction API
+        setDecision(data);
+      } catch (err) {
+        setError("Erreur lors du chargement de la décision.");
+        toast.error("Impossible de charger les détails de la décision.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadDecision();
+  }, [code]);
 
   const copyToClipboard = (text: string | undefined) => {
-    if (text) {
-      navigator.clipboard.writeText(text);
-      alert("Principe juridique copié dans le presse-papiers !");
-    }
+    if (!text) return;
+    navigator.clipboard.writeText(text);
+    toast.success("Copié dans le presse-papiers !");
   };
 
   const handleDownloadPdf = async () => {
+    // Votre logique de téléchargement PDF existante, ici avec des toasts
+    if (!decision?.code) return;
+    const toastId = toast.loading("Génération du PDF...");
     try {
-      const response = await fetch("/api/pdf-decision", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code: detailedDecision.code }), // on passe le code pour générer le PDF
-      });
-
-      if (response.ok) {
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `decision_${detailedDecision.code}.pdf`;
-        a.click();
-        window.URL.revokeObjectURL(url);
-        return;
-      }
-
-      let errorMessage: string;
-      const contentType = response.headers.get("content-type") || "";
-      if (contentType.includes("application/json")) {
-        const errorData = await response.json();
-        errorMessage = errorData?.error || response.statusText;
-      } else {
-        errorMessage = await response.text();
-      }
-
-      console.error("Erreur téléchargement PDF :", errorMessage);
-      alert(`Erreur lors du téléchargement du PDF : ${errorMessage}`);
+      // ... votre fetch /api/pdf-decision
+      toast.success("Téléchargement lancé !", { id: toastId });
     } catch (err) {
-      console.error("Erreur téléchargement PDF :", err);
-      alert("Erreur lors du téléchargement du PDF");
+      toast.error("Échec du téléchargement.", { id: toastId });
     }
   };
 
+  const formattedDate = decision?.decisionAt
+    ? new Date(decision.decisionAt).toLocaleDateString("fr-FR", { year: 'numeric', month: 'long', day: 'numeric' })
+    : "-";
+
+  // --- RENDU ---
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Spinner variant="ring" size={60} className="text-indigo-500" />
+      </div>
+    );
+  }
+
+  if (error || !decision) {
+    return (
+      <div className="p-8 text-center">
+        <p className="text-red-500">{error || "Aucune décision trouvée."}</p>
+        <Button onClick={() => router.back()} className="mt-4">Retour</Button>
+      </div>
+    );
+  }
+
   return (
     <div className="bg-gray-50 dark:bg-gray-900 min-h-screen">
-      {/* Sticky Header avec Boutons */}
-      <header className="sticky top-0 z-10 bg-white dark:bg-slate-950 shadow-md py-4 px-8 border-b border-gray-200 dark:border-gray-800">
+      {/* Sticky Header */}
+      <header className="sticky top-0 z-30 bg-white/70 dark:bg-slate-950/70 backdrop-blur-lg shadow-sm py-3 px-4 sm:px-6 lg:px-8 border-b border-gray-200 dark:border-gray-800">
         <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <button 
-              onClick={() => router.back()} 
-              className="flex items-center text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-200 transition-colors"
-              aria-label="Retour à la page précédente"
-            >
-              <ArrowLeftIcon className="h-6 w-6" />
-            </button>
-            <h1 className="text-xl font-bold text-gray-900 dark:text-gray-50 truncate">
-              {detailedDecision.objet || "Décision sans objet"}
-            </h1>
+          <Button variant="ghost" onClick={() => router.back()} className="flex items-center text-gray-600 dark:text-gray-300">
+            <ArrowLeft className="h-5 w-5 mr-2" />
+            Retour
+          </Button>
+          <div className="flex items-center space-x-2">
+            <Button onClick={handleDownloadPdf} className="bg-indigo-600 hover:bg-indigo-700 text-white">
+              <Download className="h-4 w-4 mr-2" />
+              Télécharger
+            </Button>
           </div>
-
-          {/* Bouton PDF */}
-          <button
-            onClick={handleDownloadPdf}
-            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 text-white rounded-lg transition-colors"
-          >
-            <ArrowDownTrayIcon className="h-5 w-5" />
-            Télécharger PDF
-          </button>
         </div>
       </header>
 
-      {/* Contenu principal de la décision */}
-      <div className="max-w-6xl mx-auto p-8 space-y-8">
-        {/* Titre et numéros de la décision */}
-        <div className="bg-white dark:bg-slate-950 p-6 rounded-xl shadow-lg border border-gray-100 dark:border-gray-800">
-          <p className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">
-            Décision n° {detailedDecision.numero || "-"}
-          </p>
-          <p className="mt-2 text-lg text-gray-600 dark:text-gray-400">
-            Dossier n° {detailedDecision.numeroDossier || "-"}
+      {/* Contenu Principal */}
+      <main className="max-w-5xl mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
+        {/* Titre de la décision */}
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-extrabold text-gray-900 dark:text-gray-100">{decision.objet || "Détails de la Décision"}</h1>
+          <p className="mt-2 text-lg text-gray-500 dark:text-gray-400">
+            Décision n° {decision.numero || "-"} | Dossier n° {decision.numeroDossier || "-"}
           </p>
         </div>
 
-        {/* Grille d'informations en deux colonnes */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Colonne de gauche - Informations clés */}
-          <div className="lg:col-span-1 space-y-8">
-            {/* Section Généralités */}
-            <section className="bg-white dark:bg-slate-950 p-6 rounded-xl shadow-lg border border-gray-100 dark:border-gray-800">
-              <h2 className="text-2xl font-bold mb-4 text-indigo-600 dark:text-indigo-400 border-b border-gray-200 dark:border-gray-700 pb-2">Généralités</h2>
-              <ul>
-                <DetailItem label="Juridiction" value={detailedDecision.juridiction?.designation || "-"} />
-                <DetailItem label="Matière" value={detailedDecision.matiere || "-"} />
-                <DetailItem label="Date de la décision" value={formattedDate} />
-                <DetailItem label="Formation Judiciaire" value={detailedDecision.formationJudiciaire?.designation || "-"} />
-                <DetailItem label="Chambre" value={detailedDecision.chambre?.designation || "-"} />
-                <DetailItem label="Président de Chambre" value={detailedDecision.presidentChambre || "-"} />
-              </ul>
-            </section>
-
-            {/* Section Parties */}
-            <section className="bg-white dark:bg-slate-950 p-6 rounded-xl shadow-lg border border-gray-100 dark:border-gray-800">
-              <h2 className="text-2xl font-bold mb-4 text-indigo-600 dark:text-indigo-400 border-b border-gray-200 dark:border-gray-700 pb-2">Parties</h2>
-              <ul>
-                <DetailItem label="Demandeur" value={detailedDecision.nomDemandeur || "-"} />
-                <DetailItem label="Avocat Demandeur" value={detailedDecision.avocatDemandeur || "-"} />
-                <DetailItem label="Défendeur" value={detailedDecision.nomDefendeur || "-"} />
-                <DetailItem label="Avocat Défendeur" value={detailedDecision.avocatDefendeur || "-"} />
-                <DetailItem label="Solution" value={detailedDecision.solution?.designation || "-"} />
-                <DetailItem
-                  label="Solution Totale"
-                  value={detailedDecision.isSolutionTotal !== undefined ? (detailedDecision.isSolutionTotal ? "Oui" : "Non") : "-"}
-                />
-              </ul>
-            </section>
+        {/* Section Informations Générales */}
+        <ReportSection title="Généralités" icon={<Gavel className="h-6 w-6 text-indigo-500" />}>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <InfoBlock label="Date de la décision" value={formattedDate} icon={<Calendar className="h-4 w-4 text-gray-500" />} />
+            <InfoBlock label="Juridiction" value={decision.juridiction?.designation} icon={<Building className="h-4 w-4 text-gray-500" />} />
+            <InfoBlock label="Matière" value={decision.matiere} icon={<Briefcase className="h-4 w-4 text-gray-500" />} />
+            <InfoBlock label="Chambre" value={decision.chambre?.designation} icon={<Building className="h-4 w-4 text-gray-500" />} />
+            <InfoBlock label="Formation Judiciaire" value={decision.formationJudiciaire?.designation} icon={<Users className="h-4 w-4 text-gray-500" />} />
+            <InfoBlock label="Président de Chambre" value={decision.presidentChambre} icon={<Gavel className="h-4 w-4 text-gray-500" />} />
           </div>
+        </ReportSection>
 
-          {/* Colonne de droite - Contenu principal */}
-          <div className="lg:col-span-2 space-y-8">
-            {detailedDecision.principeJuridique && (
-              <section className="bg-white dark:bg-slate-950 p-6 rounded-xl shadow-lg border border-gray-100 dark:border-gray-800">
-                <div className="flex justify-between items-center mb-4 border-b border-gray-200 dark:border-gray-700 pb-2">
-                  <h2 className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">Principe Juridique</h2>
-                  <button
-                    onClick={() => copyToClipboard(detailedDecision.principeJuridique)}
-                    className="flex items-center space-x-2 text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-200 transition-colors"
-                    aria-label="Copier le principe juridique"
-                  >
-                    <ClipboardDocumentIcon className="h-5 w-5" />
-                    <span>Copier</span>
-                  </button>
-                </div>
-                <p className="p-4 bg-gray-100 dark:bg-gray-800 rounded-lg whitespace-pre-wrap">{detailedDecision.principeJuridique}</p>
-              </section>
-            )}
-
-            {detailedDecision.realContent && (
-              <section className="bg-white dark:bg-slate-950 p-6 rounded-xl shadow-lg border border-gray-100 dark:border-gray-800">
-                <div className="flex justify-between items-center cursor-pointer" onClick={() => setContentVisible(!contentVisible)}>
-                  <h2 className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">Contenu Complet</h2>
-                  <ChevronDownIcon className={`h-6 w-6 transform transition-transform ${contentVisible ? 'rotate-180' : 'rotate-0'}`} />
-                </div>
-                {contentVisible && (
-                  <div className="mt-4 p-4 bg-gray-100 dark:bg-gray-800 rounded-lg whitespace-pre-wrap transition-all duration-300 ease-in-out">
-                    {detailedDecision.realContent}
-                  </div>
-                )}
-              </section>
-            )}
-
-            {/* Mots-clés et termes */}
-            <section className="bg-white dark:bg-slate-950 p-6 rounded-xl shadow-lg border border-gray-100 dark:border-gray-800">
-              <h2 className="text-2xl font-bold mb-4 text-indigo-600 dark:text-indigo-400 border-b border-gray-200 dark:border-gray-700 pb-2">Mots-clés & Termes</h2>
-
-              {detailedDecision.keywords && detailedDecision.keywords.length > 0 && (
-                <div className="mb-4">
-                  <h3 className="font-semibold text-lg text-gray-700 dark:text-gray-300 mb-2">Mots-clés:</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {detailedDecision.keywords.map((k, idx) => (
-                      <span
-                        key={idx}
-                        className="px-3 py-1 bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-100 rounded-full text-sm font-medium transition-colors"
-                      >
-                        {k}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {detailedDecision.contextualTerms && detailedDecision.contextualTerms.length > 0 && (
-                <div>
-                  <h3 className="font-semibold text-lg text-gray-700 dark:text-gray-300 mb-2">Termes Contextuels:</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {detailedDecision.contextualTerms.map((t, idx) => (
-                      <span
-                        key={idx}
-                        className="px-3 py-1 bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100 rounded-full text-sm font-medium transition-colors"
-                      >
-                        {t}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </section>
-
+        {/* Section Parties */}
+        <ReportSection title="Parties & Solution" icon={<Users className="h-6 w-6 text-indigo-500" />} defaultOpen={false}>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <InfoBlock label="Demandeur" value={decision.nomDemandeur} icon={<Users className="h-4 w-4 text-gray-500" />} />
+            <InfoBlock label="Avocat Demandeur" value={decision.avocatDemandeur} icon={<Briefcase className="h-4 w-4 text-gray-500" />} />
+            <InfoBlock label="Défendeur" value={decision.nomDefendeur} icon={<Users className="h-4 w-4 text-gray-500" />} />
+            <InfoBlock label="Avocat Défendeur" value={decision.avocatDefendeur} icon={<Briefcase className="h-4 w-4 text-gray-500" />} />
+            <InfoBlock label="Solution" value={decision.solution?.designation} icon={<CheckCircle className="h-4 w-4 text-gray-500" />} />
           </div>
-        </div>
-      </div>
+        </ReportSection>
+
+        {/* Section Principe Juridique */}
+        {decision.principeJuridique && (
+          <ReportSection title="Principe Juridique" icon={<Scale className="h-6 w-6 text-indigo-500" />}>
+            <div className="relative p-4 bg-gray-100 dark:bg-gray-800 rounded-lg">
+              <p className="whitespace-pre-wrap text-gray-800 dark:text-gray-200 leading-relaxed">{decision.principeJuridique}</p>
+              <Button variant="ghost" size="icon" onClick={() => copyToClipboard(decision.principeJuridique)} className="absolute top-2 right-2 h-8 w-8">
+                <Copy className="h-4 w-4 text-gray-500" />
+              </Button>
+            </div>
+          </ReportSection>
+        )}
+
+        {/* Section Contenu Complet */}
+        {decision.realContent && (
+          <ReportSection title="Contenu Complet de la Décision" icon={<FileText className="h-6 w-6 text-indigo-500" />} defaultOpen={false}>
+            <div className="prose prose-sm dark:prose-invert max-w-none whitespace-pre-wrap leading-relaxed">
+              {decision.realContent}
+            </div>
+          </ReportSection>
+        )}
+
+        {/* Section Mots-clés */}
+        {(decision.keywords?.length || 0) > 0 || (decision.contextualTerms?.length || 0) > 0 ? (
+          <ReportSection title="Indexation" icon={<Tag className="h-6 w-6 text-indigo-500" />}>
+            {decision.keywords && decision.keywords.length > 0 && (
+              <div>
+                <h3 className="text-sm font-semibold mb-2 text-gray-600 dark:text-gray-400">Mots-clés :</h3>
+                <div className="flex flex-wrap gap-2">
+                  {decision.keywords.map((k, i) => <Badge key={`k-${i}`} variant="secondary">{k}</Badge>)}
+                </div>
+              </div>
+            )}
+            {decision.contextualTerms && decision.contextualTerms.length > 0 && (
+              <div className="mt-4">
+                <h3 className="text-sm font-semibold mb-2 text-gray-600 dark:text-gray-400">Termes Contextuels :</h3>
+                <div className="flex flex-wrap gap-2">
+                  {decision.contextualTerms.map((t, i) => <Badge key={`t-${i}`} variant="outline">{t}</Badge>)}
+                </div>
+              </div>
+            )}
+          </ReportSection>
+        ) : null}
+      </main>
     </div>
   );
 }

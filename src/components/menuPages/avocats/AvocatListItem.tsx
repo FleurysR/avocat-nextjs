@@ -41,14 +41,14 @@ export function AvocatListItem({ avocat, searchTerm, onClick, className }: Avoca
           <span className="truncate">{avocat.ville}</span>
         </div>
       </td>
-      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
+      {/* <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
         {avocat.district && (
-          <div className="flex items-center gap-2">
-            <Scale className="h-4 w-4 text-gray-500 dark:text-gray-400 flex-shrink-0" />
-            <span className="truncate">{avocat.district.designation}</span>
-          </div>
+          // <div className="flex items-center gap-2">
+          //   <Scale className="h-4 w-4 text-gray-500 dark:text-gray-400 flex-shrink-0" />
+          //   <span className="truncate">{avocat.district.designation}</span>
+          // </div>
         )}
-      </td>
+      </td> */}
     </tr>
   );
 }

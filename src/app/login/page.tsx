@@ -29,7 +29,7 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (isAuthenticated) {
-      router.push("/Espace-avocat");
+      router.push("/Espace-avocat/accueil");
     }
   }, [isAuthenticated, router]);
 

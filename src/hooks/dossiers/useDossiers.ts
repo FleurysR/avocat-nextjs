@@ -1,40 +1,57 @@
-// src/hooks/dossiers/useDossiers.ts
+// src/hooks/useDossiers.ts
 import { useState, useEffect } from "react";
-import { fetchDossiers } from "@/services/client-api";
-import { Dossier } from "@/types";
-import { useDebounce } from "@/components/context/useDebounce";
-import { toast } from "sonner";
+import { fetchDossiers, createDossier, updateDossier } from "@/services/client-api";
+import type { Dossier, DossierDetails, NewDossierData } from "@/types";
 
-const ITEMS_PER_PAGE = 10;
-
-export function useDossiers(searchQuery: string, currentPage: number) {
+export function useDossiers(query = '', page = 1, pageSize = 10) {
   const [dossiers, setDossiers] = useState<Dossier[]>([]);
-  const [totalItems, setTotalItems] = useState(0);
+  const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const debouncedSearch = useDebounce(searchQuery, 400);
-
+  // Récup automatiques des dossiers à chaque changement de recherche/page
   useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const data = await fetchDossiers(debouncedSearch, ITEMS_PER_PAGE, currentPage);
-        
-        const sortedDossiers = data?.data.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    setLoading(true);
+    fetchDossiers(query, pageSize, page)
+      .then(data => {
+        setDossiers(data.data || []);
+        setTotalCount(data.totalCount || 0);
+        setError(null);
+      })
+      .catch(err => {
+        setError("Erreur lors de la récupération des dossiers.");
+      })
+      .finally(() => setLoading(false));
+  }, [query, page, pageSize]);
 
-        setDossiers(sortedDossiers || []);
-        setTotalItems(data?.totalCount || 0);
-      } catch (err) {
-        setError("Impossible de charger les dossiers. Veuillez réessayer.");
-        toast.error("Erreur de chargement des dossiers.");
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
-  }, [debouncedSearch, currentPage]);
+  // Appelle la création et rafraîchit la liste
+  const create = async (dossierData: NewDossierData) => {
+    await createDossier(dossierData);
+    // Recharge la liste après création
+    const data = await fetchDossiers(query, pageSize, page);
+    setDossiers(data.data || []);
+    setTotalCount(data.totalCount || 0);
+  };
 
-  return { dossiers, loading, error, totalItems, totalPages: Math.ceil(totalItems / ITEMS_PER_PAGE) };
+  // Pour update (similaire)
+  const update = async (code: string, dossierData: NewDossierData) => {
+    await updateDossier(code, dossierData);
+    // Recharge la liste après update
+    const data = await fetchDossiers(query, pageSize, page);
+    setDossiers(data.data || []);
+    setTotalCount(data.totalCount || 0);
+  };
+
+  return {
+    dossiers,
+    loading,
+    error,
+    totalPages: Math.ceil(totalCount / pageSize),
+    totalCount,
+    totalItems: totalCount, // <-- Ajoute cette ligne pour compatibilité immédiate
+    create,
+    update,
+    page,
+    pageSize,
+  };
 }

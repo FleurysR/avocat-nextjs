@@ -43,7 +43,7 @@ export function Navbar({ onToggle, isSidebarOpen }: NavbarProps) {
 
   return (
     <header className="sticky top-0 z-40 w-full bg-white/70 dark:bg-slate-900 backdrop-blur-lg text-gray-900 dark:text-gray-100 transition-colors duration-500">
-      <div className="flex h-16 items-center px-4 sm:px-6 lg:px-8">
+      <div className="flex h-22 items-center px-4 sm:px-6 lg:px-8">
         {/* Sidebar / Menu mobile */}
         <div className="flex items-center space-x-4">
           <Sheet>

@@ -6,11 +6,20 @@ import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import clientApi from "@/services/serverApiClient";
 import Cookies from "js-cookie";
 
+// Modèle utilisateur (adapte-le à ta structure réelle)
+export interface User {
+  id: string;
+  prenom: string;
+  email: string;
+  // ... autres champs utiles
+}
+
 interface AuthState {
   token: string | null;
   loading: boolean;
   error: string | null;
-  isAuthenticated: boolean; //  Nouvel état pour l'authentification
+  isAuthenticated: boolean;
+  user: User | null; // <- AJOUTÉ
 }
 
 interface LoginCredentials {
@@ -29,11 +38,12 @@ const initialState: AuthState = {
   token: getInitialToken(),
   loading: false,
   error: null,
-  isAuthenticated: !!getInitialToken(), // Détermine l'état initial
+  isAuthenticated: !!getInitialToken(),
+  user: null, // <- AJOUTÉ
 };
 
 export const loginUser = createAsyncThunk<
-  string,
+  { token: string; user: User },
   LoginCredentials,
   { rejectValue: string }
 >("auth/loginUser", async ({ email, password }, { rejectWithValue }) => {
@@ -45,17 +55,21 @@ export const loginUser = createAsyncThunk<
 
     const token = response.data.token;
 
+    // Option 1 : Retour d'API complet avec user (à adapter à ce que retourne réellement ton backend)
+    const user: User = response.data.user;
+
     if (typeof window !== "undefined") {
       localStorage.setItem("jwt_token", token);
       Cookies.set("jwt_token", token, { expires: 7, secure: true, sameSite: 'strict' });
     }
 
-    return token;
+    return { token, user };
   } catch (error: unknown) {
     const err = error as AxiosError<{ message?: string }>;
     return rejectWithValue(err.response?.data?.message || "Identifiants invalides");
   }
 });
+
 
 const authSlice = createSlice({
   name: "auth",
@@ -63,8 +77,9 @@ const authSlice = createSlice({
   reducers: {
     logout(state) {
       state.token = null;
+      state.user = null; // <- AJOUTÉ
       state.error = null;
-      state.isAuthenticated = false; //  Mise à jour de l'état
+      state.isAuthenticated = false;
       if (typeof window !== "undefined") {
         localStorage.removeItem("jwt_token");
         Cookies.remove("jwt_token");
@@ -72,12 +87,15 @@ const authSlice = createSlice({
     },
     setToken(state, action: PayloadAction<string>) {
       state.token = action.payload;
-      state.isAuthenticated = true; //  Mise à jour de l'état
+      state.isAuthenticated = true;
       if (typeof window !== "undefined") {
         localStorage.setItem("jwt_token", action.payload);
         Cookies.set("jwt_token", action.payload, { expires: 7, secure: true, sameSite: 'strict' });
       }
     },
+    setUser(state, action: PayloadAction<User | null>) {
+      state.user = action.payload;
+    }
   },
   extraReducers: (builder) => {
     builder
@@ -86,18 +104,20 @@ const authSlice = createSlice({
         state.error = null;
         state.isAuthenticated = false;
       })
-      .addCase(loginUser.fulfilled, (state, action: PayloadAction<string>) => {
+      .addCase(loginUser.fulfilled, (state, action: PayloadAction<{ token: string; user: User }>) => {
         state.loading = false;
-        state.token = action.payload;
-        state.isAuthenticated = true; //  Indique le succès de la connexion
+        state.token = action.payload.token;
+        state.user = action.payload.user; // <- AJOUTÉ
+        state.isAuthenticated = true;
       })
       .addCase(loginUser.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload || "Erreur inconnue";
         state.isAuthenticated = false;
+        state.user = null;
       });
   },
 });
 
-export const { logout, setToken } = authSlice.actions;
+export const { logout, setToken, setUser } = authSlice.actions;
 export default authSlice.reducer;

@@ -56,9 +56,7 @@ export function AvocatsGrid({ avocats, searchTerm, onAvocatClick, viewMode, sort
                 <th scope="col" className="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   {renderSortHeader("ville", "VILLE")}
                 </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  District
-                </th>
+                
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200 dark:divide-slate-700">

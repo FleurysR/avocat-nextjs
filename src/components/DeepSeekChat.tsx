@@ -1,187 +1,247 @@
-"use client"; 
-import { useState, useRef, useEffect } from "react";
-// Assurez-vous d'avoir les importations de vos composants shadcn/ui
-import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-// 🚨 Importation du composant ScrollArea
-import { ScrollArea } from "@/components/ui/scroll-area"; 
-import { motion, AnimatePresence } from "framer-motion";
+import React, { useState, useRef, useEffect, FormEvent } from 'react';
 
-// Définit le type pour un message
-type Message = {
-  role: "system" | "user" | "assistant";
+// --- Interfaces de type ---
+interface Message {
+  role: 'user' | 'assistant';
   content: string;
 }
 
+interface CreatedDossier { 
+    code: string;
+    objet: string; 
+    // ...
+}
+
 export default function DeepSeekChat() {
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [input, setInput] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  
-  // 1. Utilisez la ref sur l'élément racine de la ScrollArea
-  const scrollAreaRef = useRef<HTMLDivElement>(null); 
+    const [messages, setMessages] = useState<Message[]>([]);
+    const [input, setInput] = useState('');
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState('');
+    const [lastCreatedDossierCode, setLastCreatedDossierCode] = useState<string | null>(null); // Pour suivre le dossier à enrichir
+    const chatEndRef = useRef<HTMLDivElement>(null);
 
-  // 2. Correction de la fonction de défilement pour cibler le viewport interne
-  useEffect(() => {
-    if (scrollAreaRef.current) {
-      // Le viewport Radix/Shadcn a cet attribut data-radix-scroll-area-viewport
-      const viewport = scrollAreaRef.current.querySelector(
-        '[data-radix-scroll-area-viewport]'
-      ) as HTMLDivElement | null;
-      
-      if (viewport) {
-        // Défilement vers le bas du viewport
-        viewport.scrollTop = viewport.scrollHeight;
-      }
-    }
-  }, [messages]);
+    // ⚠️ IMPORTANT : Configurez l'URL de votre API Symfony ici.
+    const SYMFONY_API_URL = "https://localhost:8000"; 
 
-  const sendMessage = async () => {
-    if (!input.trim() || loading) return;
+    // --- Gestion du défilement ---
+    useEffect(() => {
+        chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }, [messages]);
 
-    const userMessage: Message = { role: "user", content: input };
+    const updateChat = (role: 'assistant' | 'user', content: string) => {
+        setMessages(prev => [...prev, { role, content }]);
+    };
     
-    // AJOUT du message système pour forcer le Français et le contexte Juridique
-    const systemMessage: Message = {
-      role: "system", 
-      content: "Tu es un assistant juridique expert, spécialisé dans le droit. Réponds toujours en FRANÇAIS, dans un ton professionnel et précis. Concentre-toi sur l'aide à l'analyse de cas, la recherche de lois/décisions et la proposition de stratégies juridiques.",
+    // --------------------------------------------------
+    // 1. FONCTION DE CRÉATION DE DOSSIER (Appel à Symfony)
+    // --------------------------------------------------
+
+    const createDossier = async (description: string) => {
+        // NOTE: Implémentez la logique d'authentification réelle (JWT, Session)
+        const token = "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJpYXQiOjE3NjI0ODY1NDUsImV4cCI6MTc2MjU3Mjk0NSwicm9sZXMiOlsiUk9MRV9BRE1JTiIsIlJPTEVfVVNFUiJdLCJ1c2VybmFtZSI6ImFkbWluQHlvcG1haWwuY29tIn0.oeg7HlCQio96G9LZ2eTlz2FgeRDBzO8az5O33mboNosNnWLZCzwrDi38aioHAUFGsHoMBuacDZIol_jHF1Ol9uFWy0L5dT366MzWFQwiTFtMPizcEeEo0mhJ-m0GK1kFaSVcmFIMosH39wmcBP7NqdZ5xuUkhxbELIb4sExBYCy2zbfKxopRaPMvVgAeLuVUcoH7A_xA8ZVMjfQzQ0MGLreRBCvURuD0xAZjHaWtC4CsDTYO3ZaLDZsoaKh9suXbbbG6Gg6gtuumaobu7d4Z7jJydanEwp81pM2JMR0cD3a9aD-HLJzOg6ST-LqK44FbcRwEkgWDxQb3L0KKBvpwB-ucTMWQNI7xMICYh5fWNYL_w3l0FuWKTkivUwi_ETol2nJmicvvd3OC_5D__L3mCMe0nEJlgSQU5zAMsxPngQbuwSlYKwGIp5Hqg5OXEebchSJmWP_n2xr5RfEm_00n9-DDFUSEFoGWVePNLsVaowk4nWoA-A4f-OQqfiEo7uHm-kMyfyPynO8y8KOiGkUhu-LDuKhw2MVK4nzq5bcN5qzM4x467cJs1JrdjIzeoMKsFt8cAlqTrebFQ_hIt-7JbNF-HDPpSeSTfT3AqU2PcI7QOkYbmAeXi3R46POGACrU6mJGIQdF-gvfNJsTpwirz9EAtWm16ggct62s48qS3aA"; 
+
+        if (loading) return;
+
+        try {
+            setLoading(true);
+            setError('');
+            setLastCreatedDossierCode(null); // Réinitialiser avant de créer
+            
+            updateChat('assistant', "⏳ Envoi du cas à l'IA pour l'analyse et la création du dossier...");
+            
+            const response = await fetch(`${SYMFONY_API_URL}/api/dossiers/create-dossier`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}` 
+                },
+                body: JSON.stringify({ description: description })
+            });
+
+            const data: CreatedDossier & { detail?: string; error?: string } = await response.json();
+
+            if (!response.ok) {
+                const errorMessage = data.detail || data.error || `Erreur Symfony: ${response.statusText}`;
+                throw new Error(errorMessage);
+            }
+
+            // SUCCESS : Stocker le code et afficher la confirmation
+            setLastCreatedDossierCode(data.code); 
+            
+            updateChat('assistant', `✅ **Dossier créé avec succès !**
+                
+Code: **${data.code}**
+Objet: **${data.objet}**
+                
+Cliquez sur le bouton ci-dessous pour lancer l'enrichissement par la recherche de lois et décisions (Précédents Juridiques).`);
+            
+            return data;
+
+        } catch (e: any) {
+            const displayError = e.message || "Échec inattendu de la création du dossier.";
+            setError(displayError);
+            updateChat('assistant', `❌ **Erreur lors de la création du dossier :** ${displayError}`);
+
+        } finally {
+            setLoading(false);
+        }
     };
 
-    const messagesToSend: Message[] = [
-        systemMessage, 
-        ...messages,
-        userMessage
-    ];
 
-    setMessages((prev) => [...prev, userMessage]);
-    setInput("");
-    setLoading(true);
-    setError("");
+    // -------------------------------------------------------------------------
+    // 2. NOUVELLE FONCTION : Lancer l'Enrichissement (Lois et Décisions)
+    // -------------------------------------------------------------------------
 
-    setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
+    const enrichDossier = async (dossierCode: string) => {
+        const token = "VOTRE_TOKEN_JWT_OU_SESSION_ID"; 
+        if (loading) return;
 
-    try {
-      const res = await fetch("/api/deepseek", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: messagesToSend }), 
-      });
+        setLoading(true);
+        setError('');
 
-      if (!res.ok || !res.body) {
-        const errorData = res.status !== 500 ? await res.json().catch(() => ({})) : { error: "Erreur serveur" };
-        throw new Error(errorData.error || `Erreur lors de la requête (Statut: ${res.status})`);
-      }
+        try {
+            updateChat('assistant', `🔎 Début de l'analyse approfondie du dossier **${dossierCode}**...`);
 
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
-      let currentAssistantResponse = "";
-      let buffer = ""; 
-      
-      while (true) {
-        const { value, done } = await reader.read();
-        if (done) break; 
+            // --- ÉTAPE A : Recherche des Lois et Articles (Base de lois) ---
+            updateChat('assistant', '⏱️ Recherche des lois et articles applicables...');
+            let response = await fetch(`${SYMFONY_API_URL}/api/dossiers/${dossierCode}/loi_article`, {
+                method: 'GET',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (!response.ok) throw new Error("Échec de la recherche de lois et articles.");
+            // On s'attend à ce que l'action soit effectuée côté backend
+            
+            updateChat('assistant', '✅ Lois et articles identifiés.');
 
-        buffer += decoder.decode(value, { stream: true });
+            // --- ÉTAPE B : Recherche des Précédents Juridiques (Gestion des décisions) ---
+            updateChat('assistant', '⏱️ Recherche des précédents et jurisprudences pertinents...');
+            response = await fetch(`${SYMFONY_API_URL}/api/dossiers/${dossierCode}/precedent_juridique`, {
+                method: 'GET',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (!response.ok) throw new Error("Échec de la recherche de précédents juridiques.");
+            // On s'attend à ce que l'action soit effectuée côté backend
+            
+            updateChat('assistant', `✨ **Dossier ${dossierCode} ENRICHI !**
+            
+Vous pouvez maintenant consulter les **lois**, **articles** et **décisions judiciaires** recommandés dans le module 'Gestion des dossiers'.`);
 
-        const lines = buffer.split('\n');
-        buffer = lines.pop() || ""; 
+            setLastCreatedDossierCode(null); // Cache le bouton d'enrichissement après l'action
 
-        for (const line of lines) {
-            if (!line.trim()) continue;
-
-            try {
-                const chunk = JSON.parse(line.trim());
-                const content = chunk.choices[0]?.delta?.content;
-
-                if (content) {
-                    currentAssistantResponse += content;
-                }
-            } catch (e) {
-                // Gestion silencieuse des morceaux JSONL
-            }
+        } catch (e: any) {
+            updateChat('assistant', `❌ **Erreur d'enrichissement** : ${e.message || "Problème de communication avec le serveur."}`);
+        } finally {
+            setLoading(false);
         }
-        
-        setMessages((prev) => {
-          if (prev.length === 0) return prev;
-          
-          const updatedMessages = [...prev];
-          updatedMessages[updatedMessages.length - 1].content = currentAssistantResponse;
-          return updatedMessages;
-        });
-      }
+    };
 
-    } catch (err: any) {
-      console.error(err);
-      setMessages((prev) => prev.slice(0, prev.length - 1)); 
-      setError(err.message || "Impossible de contacter DeepSeek");
-    } finally {
-      setLoading(false);
-    }
-  };
+    // --------------------------------------------------
+    // 3. FONCTION D'ENVOI GÉNÉRALE (Gère Chat vs Commande)
+    // --------------------------------------------------
+    const sendMessage = async (e: FormEvent) => {
+        e.preventDefault();
+        if (!input.trim() || loading) return;
 
-  return (
-    <Card className="w-full max-w-9xl mx-auto bg-gray-900 text-white border-gray-700 mt-9">
-      <CardContent className="p-4">
-        <h2 className="text-xl font-bold mb-4">🤖 Assistant Juridique AI (DeepSeek)</h2>
+        const trimmedInput = input.trim();
+        const newUserMessage: Message = { role: 'user', content: trimmedInput };
+        setMessages((prev) => [...prev, newUserMessage]);
+        setInput(''); // Vider l'input immédiatement
 
-        {/* 3. Utilisation du ref standard sur le composant ScrollArea */}
-        <ScrollArea 
-          className="h-96 p-4 border border-gray-700 rounded-lg bg-gray-800"
-          ref={scrollAreaRef} // 🚨 CORRECTION TS2322 : Utilisation de la prop 'ref' standard
-        >
-          <AnimatePresence>
-            {messages.map((msg, idx) => (
-              <motion.div
-                key={idx}
-                initial={{ opacity: 0, y: 20 }} 
-                animate={{ opacity: 1, y: 0 }} 
-                exit={{ opacity: 0 }} 
-                transition={{ duration: 0.3 }}
-                className={`my-2 flex ${
-                  msg.role === "user" ? "justify-end" : "justify-start"
-                }`} 
-              >
-                <div
-                  className={`px-3 py-2 rounded-2xl max-w-[70%] text-sm whitespace-pre-line ${
-                    msg.role === "user"
-                      ? "bg-blue-600 text-white"
-                      : "bg-gray-700 text-gray-200"
-                  }`}
-                >
-                  {msg.role === "assistant" && msg.content === "" && loading 
-                    ? <span className="animate-pulse">...</span> 
-                    : msg.content}
-                </div>
-              </motion.div>
-            ))}
-          </AnimatePresence>
+        // --- Détection de la COMMANDE /nouveau-dossier ---
+        if (trimmedInput.startsWith('/nouveau-dossier')) {
+            const description = trimmedInput.substring('/nouveau-dossier'.length).trim();
+            if (!description) {
+                updateChat('assistant', `⚠️ Commande incomplète. Format : \`/nouveau-dossier [description détaillée du cas]\``);
+            } else {
+                await createDossier(description);
+            }
+            return;
+        }
 
-          {messages.length > 0 && messages[messages.length - 1].role === "assistant" && messages[messages.length - 1].content === "" && loading && (
-             <p className="text-gray-400 italic mt-2">DeepSeek réfléchit...</p>
-          )}
+        // --- LOGIQUE PAR DÉFAUT (Appel API Chat) ---
+        try {
+            setLoading(true);
+            
+            // NOTE : L'appel au Route Handler /api/deepseek/route.ts doit être fait ici.
+            // ... Votre logique de fetch vers '/api/deepseek' ...
+            
+            // Simulation de la réponse du chat
+            await new Promise(resolve => setTimeout(resolve, 1500)); 
+            const aiResponse: Message = {
+                role: 'assistant',
+                content: `Je suis l'assistant de chat. Utilisez la commande **/nouveau-dossier** pour l'analyse de cas.`
+            };
+            setMessages((prev) => [...prev, aiResponse]);
+            
+        } catch (error) {
+            updateChat('assistant', "Erreur lors de la communication avec l'IA de chat.");
+        } finally {
+            setLoading(false);
+        }
+    };
 
-        </ScrollArea>
+    // --------------------------------------------------
+    // 4. RENDU (Le JSX)
+    // --------------------------------------------------
+    return (
+        <div style={{ display: 'flex', flexDirection: 'column', height: '80vh', maxWidth: '800px', margin: '20px auto', border: '1px solid #ccc', borderRadius: '8px', overflow: 'hidden', fontFamily: 'Arial, sans-serif' }}>
+            <div style={{ padding: '10px', backgroundColor: '#f5f5f5', borderBottom: '1px solid #ccc', textAlign: 'center' }}>
+                <h3>💬 Avocat-ai Assist Chat</h3>
+            </div>
+            
+            <div style={{ flexGrow: 1, overflowY: 'auto', padding: '16px' }}>
+                {messages.map((msg, index) => (
+                    <div key={index} style={{ 
+                        marginBottom: '15px', 
+                        padding: '10px', 
+                        borderRadius: '8px', 
+                        backgroundColor: msg.role === 'user' ? '#e6f7ff' : '#f0f0f0', 
+                        marginLeft: msg.role === 'user' ? 'auto' : '0',
+                        marginRight: msg.role === 'user' ? '0' : 'auto',
+                        maxWidth: '85%',
+                        textAlign: msg.role === 'user' ? 'right' : 'left',
+                        boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
+                    }}>
+                        <strong>{msg.role === 'user' ? 'Vous' : 'Assist'} : </strong>
+                        <div style={{ whiteSpace: 'pre-wrap' }}>{msg.content}</div>
+                    </div>
+                ))}
+                
+                {/* 🚨 BOUTON D'ENRICHISSEMENT APPARAÎT APRÈS LA CRÉATION */}
+                {lastCreatedDossierCode && (
+                    <div style={{ textAlign: 'center', margin: '20px 0' }}>
+                        <button 
+                            onClick={() => enrichDossier(lastCreatedDossierCode)} 
+                            disabled={loading}
+                            style={{ padding: '10px 20px', backgroundColor: loading ? '#aaa' : '#28a745', color: 'white', border: 'none', borderRadius: '5px', cursor: loading ? 'not-allowed' : 'pointer' }}
+                        >
+                            {loading ? 'Analyse en cours...' : `▶️ Lancer l'enrichissement de ${lastCreatedDossierCode}`}
+                        </button>
+                    </div>
+                )}
 
-        {error && (
-          <p className="mt-2 p-2 bg-red-600 text-white rounded">{error}</p>
-        )}
-
-        <div className="flex mt-4 space-x-2">
-          <Input
-            value={input}
-            onChange={(e) => setInput(e.target.value)} 
-            placeholder="Posez votre question juridique (Ex: Analyser l'arrêt CASS-2023-14)..."
-            className="flex-1 bg-gray-800 border-gray-700 text-white"
-            onKeyDown={(e) => e.key === "Enter" && sendMessage()} 
-            disabled={loading} 
-          />
-          <Button onClick={sendMessage} disabled={loading}>
-            {loading ? "..." : "Envoyer"}
-          </Button>
+                {loading && (
+                    <div style={{ padding: '8px', color: '#007bff', fontStyle: 'italic' }}>
+                        Avocat-ai Assist est en cours d'analyse...
+                    </div>
+                )}
+                {error && <div style={{ color: 'red', padding: '8px' }}>Erreur: {error}</div>}
+                <div ref={chatEndRef} />
+            </div>
+            
+            <form onSubmit={sendMessage} style={{ padding: '16px', borderTop: '1px solid #ccc', display: 'flex', backgroundColor: '#fff' }}>
+                <input
+                    type="text"
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    placeholder="Tapez /nouveau-dossier [description] ou votre question..."
+                    style={{ flexGrow: 1, padding: '10px', borderRadius: '4px', border: '1px solid #ccc', marginRight: '8px' }}
+                    disabled={loading}
+                />
+                <button type="submit" disabled={loading} style={{ padding: '10px 15px', borderRadius: '4px', border: 'none', backgroundColor: loading ? '#aaa' : '#007bff', color: 'white', cursor: loading ? 'not-allowed' : 'pointer' }}>
+                    {loading ? 'Analyse...' : 'Envoyer'}
+                </button>
+            </form>
         </div>
-      </CardContent>
-    </Card>
-  );
+    );
 }

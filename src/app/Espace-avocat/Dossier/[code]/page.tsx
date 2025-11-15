@@ -163,25 +163,28 @@ export default function DossierDetailsPage() {
         {!loading && !error && dossier && (
           <>
             {/* EN-TÊTE PRINCIPAL */}
-            <header className="mb-10 text-center">
-              <h1 className="text-4xl font-extrabold text-gray-900 dark:text-gray-100 leading-tight">{dossier.objet}</h1>
-              <div className="flex justify-center items-center mt-4 space-x-4">
-                <Link href={`/Espace-avocat/Dossier/${dossier.code}/modifier`}>
-                  <Button variant="ghost" className="h-10 w-10 p-2 text-gray-500 hover:text-indigo-600 hover:bg-gray-100 dark:hover:bg-gray-800" title="Modifier le dossier">
-                    <FaEdit className="h-5 w-5" />
-                  </Button>
-                </Link>
-                {/* Bouton pour télécharger le PDF */}
-                <Button 
-                  variant="ghost" 
-                  className="h-10 w-10 p-2 text-gray-500 hover:text-green-600 hover:bg-gray-100 dark:hover:bg-gray-800" 
-                  title="Exporter la stratégie en PDF"
-                  onClick={handleExportPdf}
-                >
-                  <FileText className="h-5 w-5" />
-                </Button>
-              </div>
-            </header>
+           <header className="mb-10 text-center">
+    <h1 className="text-4xl font-extrabold text-gray-900 dark:text-gray-100 leading-tight">{dossier.objet}</h1>
+    
+    {/* --- NOUVELLE VERSION DE LA DIV --- */}
+    <div className="flex justify-center items-center mt-6 space-x-3">
+        <Link href={`/Espace-avocat/Dossier/${dossier.code}/modifier`}>
+            <Button variant="outline" className="flex items-center gap-2 text-indigo-600 border-indigo-300 dark:border-indigo-700 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/50 hover:text-indigo-700">
+                <FaEdit className="h-4 w-4" />
+                <span>Modifier</span>
+            </Button>
+        </Link>
+        <Button 
+            variant="outline" 
+            className="flex items-center gap-2 text-green-600 border-green-300 dark:border-green-700 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/50 hover:text-green-700"
+            onClick={handleExportPdf}
+        >
+            <FileText className="h-4 w-4" />
+            <span>Export PDF</span>
+        </Button>
+    </div>
+    {/* --- FIN DE LA NOUVELLE VERSION --- */}
+</header>
 
             {/* INFORMATIONS CLÉS - Design plus moderne et visuel */}
             <ReportSection title="Informations Clés">
