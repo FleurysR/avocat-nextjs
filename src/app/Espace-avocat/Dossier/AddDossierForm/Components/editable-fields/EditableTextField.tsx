@@ -2,16 +2,12 @@
 
 /**
  * =====================================================
- * EDITABLE TEXT FIELD (SANS SAUVEGARDE AUTO)
+ * EDITABLE TEXT FIELD (AVEC SAUVEGARDE AUTO ✅)
  * =====================================================
- * Fichier: src/app/Espace-avocat/Dossier/AddDossierForm/components/editable-fields/EditableTextField.tsx
- * 
- * ✅ NOUVEAU: Prop disableAutoSave
- * ✅ La sauvegarde se fait manuellement depuis StepDetails
  */
 
-import React, { useState } from 'react';
-import { Edit2, X } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Edit2, Check, X } from 'lucide-react';
 
 interface EditableTextFieldProps {
   label: string;
@@ -42,13 +38,28 @@ export default function EditableTextField({
 }: EditableTextFieldProps) {
   const [tempValue, setTempValue] = useState(value);
 
+  // ✅ Réinitialiser tempValue quand value change
+  useEffect(() => {
+    setTempValue(value);
+  }, [value]);
+
   const handleSave = () => {
+    // Si la valeur n'a pas changé, juste fermer
+    if (tempValue === value) {
+      onClose();
+      return;
+    }
+
+    console.log(`💾 Sauvegarde: ${fieldName} = ${tempValue}`);
+    
+    // Mettre à jour l'état
     onStateChange(fieldName, tempValue);
     
-    // ✅ NOUVEAU: Ne sauvegarder que si disableAutoSave = false
+    // Sauvegarder automatiquement si activé
     if (!disableAutoSave && onSave) {
       onSave(fieldName, tempValue);
     }
+    
     onClose();
   };
 
@@ -57,11 +68,24 @@ export default function EditableTextField({
     onClose();
   };
 
+  // ✅ Sauvegarder quand on appuie sur Enter (pour input simple)
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !multiline) {
+      e.preventDefault();
+      handleSave();
+    }
+    if (e.key === 'Escape') {
+      handleCancel();
+    }
+  };
+
   return (
     <div className="space-y-2">
-      <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wider">
-        {label}
-      </label>
+      {label && (
+        <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wider">
+          {label}
+        </label>
+      )}
 
       {isEditing ? (
         <div className="space-y-2">
@@ -69,7 +93,9 @@ export default function EditableTextField({
             <textarea
               value={tempValue}
               onChange={(e) => setTempValue(e.target.value)}
+              onKeyDown={handleKeyDown}
               disabled={saving}
+              autoFocus
               className="w-full px-4 py-2 border border-blue-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900 disabled:opacity-50 min-h-[100px]"
             />
           ) : (
@@ -77,12 +103,22 @@ export default function EditableTextField({
               type="text"
               value={tempValue}
               onChange={(e) => setTempValue(e.target.value)}
+              onKeyDown={handleKeyDown}
               disabled={saving}
+              autoFocus
               className="w-full px-4 py-2 border border-blue-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900 disabled:opacity-50"
             />
           )}
 
           <div className="flex gap-2">
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              className="flex-1 px-3 py-2 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+            >
+              <Check className="w-4 h-4" />
+              Sauvegarder
+            </button>
             <button
               onClick={handleCancel}
               disabled={saving}

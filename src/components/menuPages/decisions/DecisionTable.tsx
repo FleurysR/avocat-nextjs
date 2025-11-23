@@ -81,13 +81,11 @@ export function DecisionTable({ decisions, onSelect, searchTerm }: DecisionTable
                   <Eye className="h-4 w-4 text-sidebar-primary" />
                 </Button>
                 {/* MODIFIÉ : 'Modifier' en Vert Vif */}
-                <Button variant="ghost" size="icon">
-                  <Pencil className="h-4 w-4 text-chart-1" />
-                </Button>
+              
                 {/* Conservé : 'Supprimer' en Rouge (conventionnel) */}
-                <Button variant="ghost" size="icon">
+                {/* <Button variant="ghost" size="icon">
                   <Trash2 className="h-4 w-4 text-red-600" />
-                </Button>
+                </Button> */}
               </TableCell>
             </TableRow>
           ))}

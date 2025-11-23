@@ -1,70 +1,91 @@
-// CHEMIN : /app/Espace-avocat/decisions/[code]/page.tsx
-
 "use client";
 
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
-// --- Services & Types ---
-// IMPORTANT : Assurez-vous que cette fonction existe et est correctement implémentée
-import { fetchDecisionByCode } from "@/services/client-api"; 
-// IMPORTANT : Assurez-vous que votre fichier de types exporte bien cette interface
-import { DetailedDecision } from "@/types"; 
+import { fetchDecisionByCode, exportDecisionPdf } from "@/services/client-api";
+import { DetailedDecision } from "@/types";
 
-// --- Composants UI ---
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-// Assurez-vous d'avoir un composant Spinner, ou remplacez-le par un simple texte "Chargement..."
-import { Spinner } from "@/components/ui/shadcn-io/spinner"; 
+import { Spinner } from "@/components/ui/shadcn-io/spinner";
 
-// --- Icônes ---
-import {
-  ArrowLeft, FileText, Gavel, Scale, Copy, ChevronDown, Download,
-  Briefcase, Calendar, Users, Building, CheckCircle, Tag
-} from "lucide-react";
+import { ArrowLeft, Download, AlertCircle, Copy, Check } from "lucide-react";
 
+// ═══════════════════════════════════════════════════════════════════════════
+// FONCTION DE TRAITEMENT DU TEXTE
+// ═══════════════════════════════════════════════════════════════════════════
 
-// =======================================================
-// SOUS-COMPOSANTS LOCAUX POUR UNE MEILLEURE STRUCTURE
-// =======================================================
+/**
+ * Nettoie et formate le contenu du jugement
+ * - Supprime les sauts de ligne indésirables
+ * - Combine les mots coupés
+ * - Formate les paragraphes
+ */
+const cleanDecisionContent = (text: string): string => {
+  if (!text) return "";
 
-// Composant pour une section sémantique de la page (repliable)
-const ReportSection = ({ title, icon, children, defaultOpen = true }: { title: string; icon: React.ReactNode; children: React.ReactNode; defaultOpen?: boolean; }) => (
-  <section className="bg-white dark:bg-slate-950/50 p-6 rounded-xl shadow-md border border-gray-200 dark:border-gray-800">
-    <details open={defaultOpen} className="group">
-      <summary className="flex items-center justify-between cursor-pointer list-none">
-        <h2 className="flex items-center text-xl font-bold text-gray-800 dark:text-gray-200">
-          {icon}
-          <span className="ml-3">{title}</span>
-        </h2>
-        <ChevronDown className="h-5 w-5 text-gray-500 transition-transform duration-300 group-open:rotate-180" />
-      </summary>
-      <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-        {children}
-      </div>
-    </details>
-  </section>
-);
+  // 1. Remplacer les multiples espaces et sauts de ligne par un seul espace
+  let cleaned = text.replace(/\s+/g, ' ').trim();
 
-// Composant pour afficher une information clé avec une icône
-const InfoBlock = ({ label, value, icon }: { label: string; value: string | undefined | null; icon: React.ReactNode; }) => {
-  if (!value || value === "-") return null;
-  return (
-    <div className="flex items-start space-x-3">
-      <div className="flex-shrink-0 mt-1">{icon}</div>
-      <div>
-        <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">{label}</p>
-        <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{value}</p>
-      </div>
-    </div>
-  );
+  // 2. Ajouter un retour à la ligne après les points suivis de majuscules (nouvelle phrase)
+  cleaned = cleaned.replace(/(\.\s+)(?=[A-Z])/g, '$1\n\n');
+
+  // 3. Ajouter un retour à la ligne après les deux-points (nouvelle section)
+  cleaned = cleaned.replace(/(:)(?=\s+[A-Z])/g, '$1\n');
+
+  // 4. Ajouter un retour à la ligne après "Attendu que" (marque des considérants)
+  cleaned = cleaned.replace(/(\.\s*Attendu que)/gi, '\n\nATTENDU QUE');
+  cleaned = cleaned.replace(/^Attendu que/gmi, 'ATTENDU QUE');
+
+  // 5. Ajouter un retour à la ligne après "PAR CES MOTIFS"
+  cleaned = cleaned.replace(/(\.\s*PAR CES MOTIFS)/gi, '\n\nPAR CES MOTIFS');
+  cleaned = cleaned.replace(/^PAR CES MOTIFS/gmi, 'PAR CES MOTIFS');
+
+  // 6. Formater les points numerotés (1. 2. 3. etc)
+  cleaned = cleaned.replace(/(\n|^)(\d+\.\s+)/gm, '\n\n$2');
+
+  // 7. Nettoyer les références multiples (exemple: "du 10 janvier du 02 mai" => corriger)
+  cleaned = cleaned.replace(/du\s+(\d+\s+\w+)\s+du\s+(\d+\s+\w+)/gi, 'du $1 au $2');
+
+  // 8. Ajouter des retours à la ligne avant les noms propres en majuscules (parties)
+  cleaned = cleaned.replace(/([A-Z]{2,})\s+(?=[A-Z][a-z]+)/g, '$1\n');
+
+  // 9. Ajouter des espaces après les virgules manquantes
+  cleaned = cleaned.replace(/,(?=\S)/g, ', ');
+
+  return cleaned;
 };
 
+/**
+ * Formate le texte pour l'affichage avec paragraphes
+ */
+const formatParagraphs = (text: string): React.ReactNode[] => {
+  const paragraphs = text.split(/\n\n+/).filter(p => p.trim());
+  
+  return paragraphs.map((para, idx) => {
+    const isHeading = /^(ATTENDU QUE|PAR CES MOTIFS|CONSIDÉRANT|STATUANT)/i.test(para.trim());
+    
+    if (isHeading) {
+      return (
+        <p key={idx} className="font-bold text-gray-900 dark:text-white mt-6 mb-2 uppercase text-sm tracking-wide">
+          {para.trim()}
+        </p>
+      );
+    }
+    
+    return (
+      <p key={idx} className="text-justify text-gray-900 dark:text-gray-100 leading-8 mb-4">
+        {para.trim()}
+      </p>
+    );
+  });
+};
 
-// =======================================================
-// COMPOSANT PRINCIPAL DE LA PAGE
-// =======================================================
+// ═══════════════════════════════════════════════════════════════════════════
+// COMPOSANT PRINCIPAL
+// ═══════════════════════════════════════════════════════════════════════════
 
 export default function DecisionDetailsPage() {
   const { code } = useParams<{ code: string }>();
@@ -73,11 +94,12 @@ export default function DecisionDetailsPage() {
   const [decision, setDecision] = useState<DetailedDecision | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [downloading, setDownloading] = useState(false);
+  const [copied, setCopied] = useState(false);
 
-  // --- LOGIQUE DE RÉCUPÉRATION DES DONNÉES ---
   useEffect(() => {
     if (!code) {
-      setError("Aucun code de décision fourni.");
+      setError("Aucun code fourni.");
       setLoading(false);
       return;
     }
@@ -85,12 +107,13 @@ export default function DecisionDetailsPage() {
     const loadDecision = async () => {
       setLoading(true);
       setError(null);
+      
       try {
-        const data = await fetchDecisionByCode(code); // Appel à votre API
+        const data = await fetchDecisionByCode(code);
         setDecision(data);
-      } catch (err) {
-        setError("Erreur lors du chargement de la décision. Veuillez réessayer.");
-        toast.error("Impossible de charger les détails de la décision.");
+      } catch (err: any) {
+        setError("Impossible de charger la décision.");
+        toast.error("Erreur");
       } finally {
         setLoading(false);
       }
@@ -99,141 +122,242 @@ export default function DecisionDetailsPage() {
     loadDecision();
   }, [code]);
 
-  // --- FONCTIONS UTILITAIRES ---
-  const copyToClipboard = (text: string | undefined) => {
-    if (!text) return;
-    navigator.clipboard.writeText(text);
-    toast.success("Copié dans le presse-papiers !");
-  };
-
   const handleDownloadPdf = async () => {
     if (!decision?.code) return;
+    
+    setDownloading(true);
     const toastId = toast.loading("Génération du PDF...");
+    
     try {
-      // Mettez ici votre logique de fetch vers /api/pdf-decision
-      // ...
-      toast.success("Téléchargement lancé !", { id: toastId });
+      const blob = await exportDecisionPdf(decision.code);
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `Decision-${decision.numero}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      
+      toast.success("PDF téléchargé !", { id: toastId });
     } catch (err) {
-      console.error("PDF Download Error:", err);
-      toast.error("Échec du téléchargement du PDF.", { id: toastId });
+      toast.error("Erreur téléchargement.", { id: toastId });
+    } finally {
+      setDownloading(false);
     }
   };
 
-  const formattedDate = decision?.decisionAt
-    ? new Date(decision.decisionAt).toLocaleDateString("fr-FR", { year: 'numeric', month: 'long', day: 'numeric' })
-    : "-";
+  const copyContent = () => {
+    if (decision?.realContent) {
+      const cleanedText = cleanDecisionContent(decision.realContent);
+      navigator.clipboard.writeText(cleanedText);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
 
-  // --- GESTION DES ÉTATS DE CHARGEMENT ET D'ERREUR ---
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900">
-        <Spinner variant="ring" size={60} className="text-indigo-500" />
+      <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-900">
+        <Spinner variant="ring" size={60} className="text-blue-500" />
       </div>
     );
   }
 
   if (error || !decision) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900 p-8 text-center">
-        <p className="text-lg font-semibold text-red-500">{error || "Aucune décision correspondante n'a été trouvée."}</p>
-        <Button onClick={() => router.back()} className="mt-6">
+      <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-900 p-8">
+        <AlertCircle className="h-16 w-16 text-red-500 mb-4" />
+        <p className="text-lg text-red-500 mb-6">{error}</p>
+        <Button onClick={() => router.back()} className="bg-blue-600">
           <ArrowLeft className="h-4 w-4 mr-2" />
-          Retour à la page précédente
+          Retour
         </Button>
       </div>
     );
   }
 
-  // --- AFFICHAGE PRINCIPAL (QUAND LES DONNÉES SONT PRÊTES) ---
+  // Nettoyer le contenu
+  const cleanedContent = decision.realContent ? cleanDecisionContent(decision.realContent) : "";
+  const cleanedPrinciple = decision.principeJuridique ? cleanDecisionContent(decision.principeJuridique) : "";
+
   return (
-    <div className="bg-gray-50 dark:bg-gray-900 min-h-screen">
-      {/* Header Sticky */}
-      <header className="sticky top-0 z-30 bg-white/70 dark:bg-slate-950/70 backdrop-blur-lg shadow-sm py-3 px-4 sm:px-6 lg:px-8 border-b border-gray-200 dark:border-gray-800">
+    <div className="bg-gray-100 dark:bg-gray-900 min-h-screen p-4">
+      {/* Navbar */}
+      <nav className="sticky top-0 z-30 bg-white dark:bg-gray-800 shadow-md p-4 mb-4 rounded-lg">
         <div className="flex items-center justify-between max-w-5xl mx-auto">
-          <Button variant="ghost" onClick={() => router.back()} className="flex items-center text-gray-600 dark:text-gray-300">
+          <Button variant="ghost" onClick={() => router.back()} className="text-gray-700 dark:text-gray-300">
             <ArrowLeft className="h-5 w-5 mr-2" />
             Retour
           </Button>
-          <div className="flex items-center space-x-2">
-            <Button onClick={handleDownloadPdf} className="bg-indigo-600 hover:bg-indigo-700 text-white">
+          
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={copyContent}>
+              {copied ? (
+                <>
+                  <Check className="h-4 w-4 mr-1" />
+                  Copié
+                </>
+              ) : (
+                <>
+                  <Copy className="h-4 w-4 mr-1" />
+                  Copier
+                </>
+              )}
+            </Button>
+            
+            <Button onClick={handleDownloadPdf} disabled={downloading} className="bg-blue-600">
               <Download className="h-4 w-4 mr-2" />
-              Télécharger
+              PDF
             </Button>
           </div>
         </div>
-      </header>
+      </nav>
 
-      {/* Contenu de la Page */}
-      <main className="max-w-5xl mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-extrabold text-gray-900 dark:text-gray-100">{decision.objet || "Détails de la Décision"}</h1>
-          <p className="mt-2 text-lg text-gray-500 dark:text-gray-400">
-            Décision n° {decision.numero || "-"} | Dossier n° {decision.numeroDossier || "-"}
-          </p>
+      <div className="max-w-5xl mx-auto">
+        
+        {/* Carte d'information */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+          <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
+            <p className="text-xs text-gray-600 dark:text-gray-400 font-semibold">ARRÊT N°</p>
+            <p className="text-lg font-bold text-gray-900 dark:text-white mt-1">{decision.numero}</p>
+          </div>
+          
+          <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
+            <p className="text-xs text-gray-600 dark:text-gray-400 font-semibold">DATE</p>
+            <p className="text-sm font-bold text-gray-900 dark:text-white mt-1">
+              {decision.decisionAt ? new Date(decision.decisionAt).toLocaleDateString("fr-FR") : "-"}
+            </p>
+          </div>
+
+          <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
+            <p className="text-xs text-gray-600 dark:text-gray-400 font-semibold">DEMANDEUR</p>
+            <p className="text-sm font-bold text-gray-900 dark:text-white mt-1 truncate">
+              {decision.nomDemandeur?.split(' ')[0] || "..."}
+            </p>
+          </div>
+
+          <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
+            <p className="text-xs text-gray-600 dark:text-gray-400 font-semibold">DÉFENDEUR</p>
+            <p className="text-sm font-bold text-gray-900 dark:text-white mt-1 truncate">
+              {decision.nomDefendeur?.split(' ')[0] || "..."}
+            </p>
+          </div>
         </div>
 
-        <ReportSection title="Généralités" icon={<Gavel className="h-6 w-6 text-indigo-500" />}>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            <InfoBlock label="Date de la décision" value={formattedDate} icon={<Calendar className="h-4 w-4 text-gray-500" />} />
-            <InfoBlock label="Juridiction" value={decision.juridiction?.designation} icon={<Building className="h-4 w-4 text-gray-500" />} />
-            <InfoBlock label="Matière" value={decision.matiere} icon={<Briefcase className="h-4 w-4 text-gray-500" />} />
-            <InfoBlock label="Chambre" value={decision.chambre?.designation} icon={<Building className="h-4 w-4 text-gray-500" />} />
-            <InfoBlock label="Formation Judiciaire" value={decision.formationJudiciaire?.designation} icon={<Users className="h-4 w-4 text-gray-500" />} />
-            <InfoBlock label="Président de Chambre" value={decision.presidentChambre} icon={<Gavel className="h-4 w-4 text-gray-500" />} />
+        {/* Document complet */}
+        <div className="bg-white dark:bg-gray-800 shadow-lg rounded-lg p-8 space-y-6">
+          
+          {/* En-tête */}
+          <div className="text-center border-b-2 border-gray-300 dark:border-gray-700 pb-6">
+            <p className="text-xs font-bold uppercase tracking-widest text-gray-700 dark:text-gray-300">RÉPUBLIQUE DE MADAGASCAR</p>
+            <p className="text-sm my-2 text-gray-500 dark:text-gray-400">─────────────────────────────</p>
+            <p className="text-base font-bold uppercase text-gray-900 dark:text-white">{decision.juridiction?.designation || "Cour de Cassation"}</p>
+            <p className="text-sm font-semibold uppercase text-gray-700 dark:text-gray-300 mt-1">{decision.chambre?.designation || "Chambre Civile"}</p>
           </div>
-        </ReportSection>
 
-        <ReportSection title="Parties & Solution" icon={<Users className="h-6 w-6 text-indigo-500" />} defaultOpen={false}>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-            <InfoBlock label="Demandeur" value={decision.nomDemandeur} icon={<Users className="h-4 w-4 text-gray-500" />} />
-            <InfoBlock label="Avocat Demandeur" value={decision.avocatDemandeur} icon={<Briefcase className="h-4 w-4 text-gray-500" />} />
-            <InfoBlock label="Défendeur" value={decision.nomDefendeur} icon={<Users className="h-4 w-4 text-gray-500" />} />
-            <InfoBlock label="Avocat Défendeur" value={decision.avocatDefendeur} icon={<Briefcase className="h-4 w-4 text-gray-500" />} />
-            <InfoBlock label="Solution" value={decision.solution?.designation} icon={<CheckCircle className="h-4 w-4 text-gray-500" />} />
+          {/* Référence et infos */}
+          <div className="grid grid-cols-2 gap-6 text-sm border-b border-gray-300 dark:border-gray-700 pb-6">
+            <div>
+              <p className="font-bold text-gray-700 dark:text-gray-300">ARRÊT N°</p>
+              <p className="text-lg font-bold text-gray-900 dark:text-white mt-1">{decision.numero}</p>
+            </div>
+            <div>
+              <p className="font-bold text-gray-700 dark:text-gray-300">DOSSIER N°</p>
+              <p className="text-lg font-bold text-gray-900 dark:text-white mt-1">{decision.numeroDossier}</p>
+            </div>
+            <div>
+              <p className="font-bold text-gray-700 dark:text-gray-300">DATE</p>
+              <p className="text-sm text-gray-900 dark:text-white mt-1">
+                {decision.decisionAt ? new Date(decision.decisionAt).toLocaleDateString("fr-FR", { 
+                  weekday: "long", 
+                  year: "numeric", 
+                  month: "long", 
+                  day: "numeric" 
+                }).replace(/^./, str => str.toUpperCase()) : "-"}
+              </p>
+            </div>
+            <div>
+              <p className="font-bold text-gray-700 dark:text-gray-300">MATIÈRE</p>
+              <p className="text-sm text-gray-900 dark:text-white mt-1">{decision.matiere}</p>
+            </div>
           </div>
-        </ReportSection>
 
-        {decision.principeJuridique && (
-          <ReportSection title="Principe Juridique" icon={<Scale className="h-6 w-6 text-indigo-500" />}>
-            <div className="relative p-4 bg-gray-100 dark:bg-gray-800 rounded-lg">
-              <p className="whitespace-pre-wrap text-gray-800 dark:text-gray-200 leading-relaxed">{decision.principeJuridique}</p>
-              <Button variant="ghost" size="icon" onClick={() => copyToClipboard(decision.principeJuridique)} className="absolute top-2 right-2 h-8 w-8">
-                <Copy className="h-4 w-4 text-gray-500" />
-              </Button>
+          {/* Parties */}
+          <div className="space-y-4 text-sm border-b border-gray-300 dark:border-gray-700 pb-6">
+            <div>
+              <p className="font-bold text-gray-900 dark:text-white">DEMANDEUR :</p>
+              <p className="text-gray-700 dark:text-gray-300 ml-4 mt-1">{decision.nomDemandeur}</p>
+              {decision.avocatDemandeur && (
+                <p className="text-gray-500 dark:text-gray-400 ml-4 text-xs mt-1">Avocat : {decision.avocatDemandeur}</p>
+              )}
             </div>
-          </ReportSection>
-        )}
 
-        {decision.realContent && (
-          <ReportSection title="Contenu Complet" icon={<FileText className="h-6 w-6 text-indigo-500" />} defaultOpen={false}>
-            <div className="prose prose-sm dark:prose-invert max-w-none whitespace-pre-wrap leading-relaxed p-2">
-              {decision.realContent}
+            <div>
+              <p className="font-bold text-gray-900 dark:text-white">DÉFENDEUR :</p>
+              <p className="text-gray-700 dark:text-gray-300 ml-4 mt-1">{decision.nomDefendeur}</p>
+              {decision.avocatDefendeur && (
+                <p className="text-gray-500 dark:text-gray-400 ml-4 text-xs mt-1">Avocat : {decision.avocatDefendeur}</p>
+              )}
             </div>
-          </ReportSection>
-        )}
+          </div>
 
-        {((decision.keywords?.length || 0) > 0 || (decision.contextualTerms?.length || 0) > 0) && (
-          <ReportSection title="Indexation" icon={<Tag className="h-6 w-6 text-indigo-500" />}>
-            {decision.keywords && decision.keywords.length > 0 && (
+          {/* Corps du jugement - TEXTE NETTOYÉ */}
+          <div className="space-y-6">
+            <p className="text-center font-bold text-gray-600 dark:text-gray-400">─────────────</p>
+
+            {cleanedContent && (
+              <div className="text-sm leading-8 text-justify text-gray-900 dark:text-gray-100 font-serif space-y-4">
+                {formatParagraphs(cleanedContent)}
+              </div>
+            )}
+
+            {/* Principe juridique - NETTOYÉ */}
+            {cleanedPrinciple && (
+              <div className="mt-8 pt-8 border-t-2 border-gray-400 dark:border-gray-600">
+                <p className="font-bold uppercase text-sm text-gray-900 dark:text-white mb-4">Principe Juridique :</p>
+                <div className="italic bg-blue-50 dark:bg-blue-900/20 p-6 rounded-lg border-l-4 border-blue-500 text-sm leading-8 text-gray-900 dark:text-gray-100">
+                  {formatParagraphs(cleanedPrinciple)}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Solution et mots-clés */}
+          <div className="border-t-2 border-gray-400 dark:border-gray-600 pt-6 mt-8">
+            {decision.solution && (
+              <div className="mb-6">
+                <p className="font-bold uppercase text-sm text-gray-900 dark:text-white mb-2">SOLUTION</p>
+                <p className="text-base font-bold text-blue-700 dark:text-blue-400">{decision.solution.designation}</p>
+              </div>
+            )}
+
+            {(decision.keywords?.length || 0) > 0 && (
               <div>
-                <h3 className="text-sm font-semibold mb-2 text-gray-600 dark:text-gray-400">Mots-clés :</h3>
+                <p className="font-bold uppercase text-sm text-gray-900 dark:text-white mb-3">MOTS-CLÉS</p>
                 <div className="flex flex-wrap gap-2">
-                  {decision.keywords.map((k, i) => <Badge key={`k-${i}`} variant="secondary">{k}</Badge>)}
+                  {decision.keywords?.map((k, i) => (
+                    <Badge key={i} variant="secondary" className="text-xs">
+                      {k}
+                    </Badge>
+                  ))}
                 </div>
               </div>
             )}
-            {decision.contextualTerms && decision.contextualTerms.length > 0 && (
-              <div className="mt-4">
-                <h3 className="text-sm font-semibold mb-2 text-gray-600 dark:text-gray-400">Termes Contextuels :</h3>
-                <div className="flex flex-wrap gap-2">
-                  {decision.contextualTerms.map((t, i) => <Badge key={`t-${i}`} variant="outline">{t}</Badge>)}
-                </div>
-              </div>
+          </div>
+
+          {/* Pied de page */}
+          <div className="text-center text-xs text-gray-500 dark:text-gray-400 mt-12 pt-8 border-t border-gray-300 dark:border-gray-700">
+            <p>Fait à {decision.juridiction?.designation || "Madagascar"}</p>
+            <p className="mt-2">
+              Le {decision.decisionAt ? new Date(decision.decisionAt).toLocaleDateString("fr-FR") : ""}
+            </p>
+            {decision.presidentChambre && (
+              <p className="mt-6 font-semibold">Président : {decision.presidentChambre}</p>
             )}
-          </ReportSection>
-        )}
-      </main>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
-

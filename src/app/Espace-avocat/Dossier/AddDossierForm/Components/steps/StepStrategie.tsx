@@ -41,7 +41,7 @@ export default function StepStrategie({ dossier }: StepStrategieProps) {
         </div>
       )}
 
-      {/* <div>
+      <div>
         <p className="text-xs font-semibold text-gray-600 uppercase tracking-wider mb-3">
           Stratégie Complète Générée par IA
         </p>
@@ -56,10 +56,7 @@ export default function StepStrategie({ dossier }: StepStrategieProps) {
             <p className="text-gray-600">La stratégie n'a pas pu être générée</p>
           </div>
         )}
-      </div> */}Dans le cadre de ce projet, les objectifs fixés ont été pleinement atteints au cours des derniers mois. Cela se traduit par le développement d'une application visant à améliorer la gestion des enquêtes et des sociétés pour une meilleure efficacité. En parallèle, la conception de l’interface utilisateur a été finalisée, offrant une expérience visuelle et intuitive qui reflète les valeurs du projet.
-
-Une version de staging(post-production) a été déployée, permettant des tests approfondis et des ajustements en conditions quasi-réelles. De plus, la version de production a été mise en ligne avec succès, rendant l’application accessible pour recueillir les retours d’utilisation et les suggestions d’amélioration.
-
+      </div>
     </div>
   );
 }

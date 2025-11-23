@@ -2,17 +2,23 @@
 
 /**
  * =====================================================
- * ÉTAPE 1 - DÉTAILS (FIX JWT + REDUX + LOCALSTORAGE)
+ * ÉTAPE 1 - DÉTAILS (AVEC SAUVEGARDE AUTOMATIQUE ✅)
  * + MISE EN ÉVIDENCE POINTS FORTS/FAIBLES
+ * + INITIALISATION CORRECTE DES VALEURS
  * =====================================================
  */
 
 import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { DossierDetails } from '@/types';
-import { fetchJuridictions, fetchChambresJuridiques, fetchDossierStrategies } from '@/services/client-api';
+import { 
+  fetchJuridictions, 
+  fetchChambresJuridiques, 
+  fetchDossierStrategies,
+  updateDossierFields
+} from '@/services/client-api';
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Loader2, AlertTriangle, CheckCircle, Save, TrendingUp, TrendingDown } from 'lucide-react';
+import { Loader2, AlertTriangle, CheckCircle, TrendingUp, TrendingDown } from 'lucide-react';
 import EditableFieldSelect from '../editable-fields/EditableFieldSelect';
 import EditableTextField from '../editable-fields/EditableTextField';
 
@@ -35,20 +41,20 @@ interface RootState {
 export default function StepDetails({ dossier }: StepDetailsProps) {
   const reduxToken = useSelector((state: RootState) => state.auth?.token);
 
-  const [selectedJuridiction, setSelectedJuridiction] = useState(dossier.juridiction?.code || '');
-  const [selectedChambre, setSelectedChambre] = useState(dossier.chambreJuridique?.code || '');
-  const [selectedSolution, setSelectedSolution] = useState(dossier.solutionJuridique?.code || '');
-  const [selectedStyle, setSelectedStyle] = useState(dossier.stylePlaidoirie?.code || '');
-  const [selectedStrategy, setSelectedStrategy] = useState(dossier.strategy?.code || '');
+  const [selectedJuridiction, setSelectedJuridiction] = useState('');
+  const [selectedChambre, setSelectedChambre] = useState('');
+  const [selectedSolution, setSelectedSolution] = useState('');
+  const [selectedStyle, setSelectedStyle] = useState('');
+  const [selectedStrategy, setSelectedStrategy] = useState('');
 
-  const [objet, setObjet] = useState(dossier.objet || '');
-  const [matiere, setMatiere] = useState(dossier.matiere || '');
-  const [resume, setResume] = useState(dossier.resume || '');
-  const [objectif, setObjectif] = useState(dossier.objectif || '');
-  const [faits, setFaits] = useState(dossier.faits || '');
-  const [preuves, setPreuves] = useState(dossier.preuves || '');
-  const [pointFort, setPointFort] = useState(dossier.pointFort || '');
-  const [pointFaible, setPointFaible] = useState(dossier.pointFaible || '');
+  const [objet, setObjet] = useState('');
+  const [matiere, setMatiere] = useState('');
+  const [resume, setResume] = useState('');
+  const [objectif, setObjectif] = useState('');
+  const [faits, setFaits] = useState('');
+  const [preuves, setPreuves] = useState('');
+  const [pointFort, setPointFort] = useState('');
+  const [pointFaible, setPointFaible] = useState('');
 
   const [editingField, setEditingField] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -63,6 +69,30 @@ export default function StepDetails({ dossier }: StepDetailsProps) {
   const [strategies, setStrategies] = useState<SelectOption[]>([]);
 
   useEffect(() => {
+    if (dossier) {
+      console.log('🔍 Initialisation depuis dossier:', {
+        stylePlaidoirie: dossier.stylePlaidoirie,
+        solutionJuridique: dossier.solutionJuridique,
+      });
+
+      setSelectedJuridiction(dossier.juridiction?.code || '');
+      setSelectedChambre(dossier.chambreJuridique?.code || '');
+      setSelectedSolution(dossier.solutionJuridique?.code || '');
+      setSelectedStyle(dossier.stylePlaidoirie?.code || '');
+      setSelectedStrategy(dossier.strategy?.code || '');
+      
+      setObjet(dossier.objet || '');
+      setMatiere(dossier.matiere || '');
+      setResume(dossier.resume || '');
+      setObjectif(dossier.objectif || '');
+      setFaits(dossier.faits || '');
+      setPreuves(dossier.preuves || '');
+      setPointFort(dossier.pointFort || '');
+      setPointFaible(dossier.pointFaible || '');
+    }
+  }, [dossier]);
+
+  useEffect(() => {
     fetchAllOptions();
   }, []);
 
@@ -71,6 +101,7 @@ export default function StepDetails({ dossier }: StepDetailsProps) {
       setLoading(true);
       setError(null);
 
+      // Fetch Juridictions
       try {
         const juridictionsResponse = await fetchJuridictions('', 100, 1);
         let juridictionsData: SelectOption[] = [];
@@ -92,9 +123,11 @@ export default function StepDetails({ dossier }: StepDetailsProps) {
         }
         setJuridictions(juridictionsData);
       } catch (err) {
+        console.error('Erreur juridictions:', err);
         setJuridictions([]);
       }
 
+      // Fetch Chambres juridiques
       try {
         const chambresResponse = await fetchChambresJuridiques();
         let chambresData: SelectOption[] = [];
@@ -111,9 +144,11 @@ export default function StepDetails({ dossier }: StepDetailsProps) {
         }
         setChambres(chambresData);
       } catch (err) {
+        console.error('Erreur chambres:', err);
         setChambres([]);
       }
 
+      // Fetch Stratégies
       try {
         const strategiesResponse = await fetchDossierStrategies();
         let strategiesData: SelectOption[] = [];
@@ -135,124 +170,85 @@ export default function StepDetails({ dossier }: StepDetailsProps) {
         }
         setStrategies(strategiesData);
       } catch (err) {
+        console.error('Erreur stratégies:', err);
         setStrategies([]);
       }
 
       setSolutions([
-        { code: 'rejet', designation: 'Rejet' },
-        { code: 'acceptation', designation: 'Acceptation' },
-        { code: 'resolution', designation: 'Résolution' },
-        { code: 'annulation', designation: 'Annulation' },
-        { code: 'modification', designation: 'Modification' },
+        { code: 'REJ', designation: 'Rejet' },
+        { code: 'CAS', designation: 'Cassation' },
+        { code: 'CONF', designation: 'Confirmation' },
+        { code: 'ANN', designation: 'Annulation' },
+        { code: 'MOD', designation: 'Modification' },
+        { code: 'APP', designation: 'Approbation' },
+        { code: 'INJ', designation: 'Injonction' },
+        { code: 'REN', designation: 'Renvoi' },
+        { code: 'IRC', designation: 'Irrecevable' },
+        { code: 'RES', designation: 'Résolution' },
+        { code: 'NULI', designation: 'Nullité' },
+        { code: 'REG', designation: 'Régularisation' },
+        { code: 'SUSP', designation: 'Suspension' },
+        { code: 'COND', designation: 'Condamnation' },
+        { code: 'IND', designation: 'Indemnisation' },
       ]);
 
       setStyles([
-        { code: 'contradictoire', designation: 'Contradictoire' },
-        { code: 'technique', designation: 'Technique' },
-        { code: 'offensive', designation: 'Offensive directe' },
-        { code: 'defense', designation: 'Défense classique' },
-        { code: 'replique', designation: 'Réplique' },
+        { code: 'TECH', designation: 'Technique' },
+        { code: 'EMO', designation: 'Émotionnel' },
+        { code: 'SYN', designation: 'Synthétique' },
+        { code: 'CON', designation: 'Contradictoire' },
+        { code: 'NAR', designation: 'Narratif' },
+        { code: 'VAL', designation: 'Éthique / Valeurs' },
+        { code: 'DID', designation: 'Didactique' },
       ]);
 
+      console.log('✅ Toutes les options chargées');
     } catch (err: any) {
+      console.error('Erreur chargement options:', err);
       setError('Impossible de charger certaines options.');
     } finally {
       setLoading(false);
     }
   };
 
-  const getAuthToken = (): string | null => {
-    if (reduxToken) {
-      console.log('✅ Token trouvé depuis Redux');
-      return reduxToken;
-    }
-    if (typeof window !== 'undefined') {
-      const localToken = localStorage.getItem('jwt_token');
-      if (localToken) {
-        console.log('✅ Token trouvé depuis localStorage');
-        return localToken;
-      }
-    }
-    return null;
-  };
-
-  const saveAllChanges = async () => {
+  // ✅ FONCTION DE SAUVEGARDE AUTOMATIQUE
+  const handleFieldSave = async (fieldName: string, newValue: string) => {
     try {
       setSaving(true);
       setError(null);
-      setSuccessMessage(null);
       
       const dossierCode = (dossier as any).code;
       const payload: any = {};
       
-      if (selectedJuridiction !== (dossier.juridiction?.code || '')) {
-        payload.juridictionCode = selectedJuridiction;
-      }
-      if (selectedChambre !== (dossier.chambreJuridique?.code || '')) {
-        payload.chambreJuridiqueCode = selectedChambre;
-      }
-      if (selectedSolution !== (dossier.solutionJuridique?.code || '')) {
-        payload.solutionJuridiqueCode = selectedSolution;
-      }
-      if (selectedStyle !== (dossier.stylePlaidoirie?.code || '')) {
-        payload.stylePlaidoirieCode = selectedStyle;
-      }
-      if (selectedStrategy !== (dossier.strategy?.code || '')) {
-        payload.strategyCode = selectedStrategy;
-      }
-      if (objet !== (dossier.objet || '')) payload.objet = objet;
-      if (matiere !== (dossier.matiere || '')) payload.matiere = matiere;
-      if (resume !== (dossier.resume || '')) payload.resume = resume;
-      if (objectif !== (dossier.objectif || '')) payload.objectif = objectif;
-      if (faits !== (dossier.faits || '')) payload.faits = faits;
-      if (preuves !== (dossier.preuves || '')) payload.preuves = preuves;
-      if (pointFort !== (dossier.pointFort || '')) payload.pointFort = pointFort;
-      if (pointFaible !== (dossier.pointFaible || '')) payload.pointFaible = pointFaible;
-
-      if (Object.keys(payload).length === 0) {
-        setSuccessMessage('✅ Aucune modification à sauvegarder');
-        return;
-      }
-
-      const token = getAuthToken();
-      if (!token) {
-        setError('❌ Token d\'authentification manquant. Veuillez vous reconnecter.');
-        setSaving(false);
-        return;
-      }
-
-      const apiUrl = `${process.env.NEXT_PUBLIC_API_URL || 'https://127.0.0.1:8000'}/api/dossiers/${dossierCode}/update-fields`;
-
-      const response = await fetch(apiUrl, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        credentials: 'include',
-        body: JSON.stringify(payload)
-      });
-
-      if (!response.ok) {
-        const responseText = await response.text();
-        let errorMessage = `Erreur ${response.status}`;
-        if (responseText) {
-          try {
-            const errorData = JSON.parse(responseText);
-            errorMessage = errorData.error || errorData.message || errorMessage;
-          } catch (e) {
-            errorMessage = responseText;
-          }
-        }
-        throw new Error(errorMessage);
-      }
-
-      setSuccessMessage('✅ Tous les changements ont été sauvegardés avec succès !');
-      setEditingField(null);
+      // Construire le payload selon le champ modifié
+      if (fieldName === 'juridiction') payload.juridictionCode = newValue;
+      if (fieldName === 'chambre') payload.chambreJuridiqueCode = newValue;
+      if (fieldName === 'solution') payload.solutionJuridiqueCode = newValue;
+      if (fieldName === 'style') payload.stylePlaidoirieCode = newValue;
+      if (fieldName === 'strategy') payload.strategyCode = newValue;
+      if (fieldName === 'objet') payload.objet = newValue;
+      if (fieldName === 'matiere') payload.matiere = newValue;
+      if (fieldName === 'resume') payload.resume = newValue;
+      if (fieldName === 'objectif') payload.objectif = newValue;
+      if (fieldName === 'faits') payload.faits = newValue;
+      if (fieldName === 'preuves') payload.preuves = newValue;
+      if (fieldName === 'pointFort') payload.pointFort = newValue;
+      if (fieldName === 'pointFaible') payload.pointFaible = newValue;
+      
+      console.log('💾 Sauvegarde automatique:', { fieldName, newValue, payload });
+      
+      // Appel API
+      await updateDossierFields(dossierCode, payload);
+      
+      console.log('✅ Champ sauvegardé automatiquement');
+      setSuccessMessage(`✅ Modification sauvegardée !`);
+      
+      // Effacer le message après 2 secondes
+      setTimeout(() => setSuccessMessage(null), 2000);
       
     } catch (err: any) {
-      console.error('Erreur sauvegarde:', err);
-      setError(`Erreur lors de la sauvegarde : ${err.message}`);
+      console.error('❌ Erreur sauvegarde automatique:', err);
+      setError(`Erreur : ${err.message}`);
     } finally {
       setSaving(false);
     }
@@ -329,15 +325,15 @@ export default function StepDetails({ dossier }: StepDetailsProps) {
             onEdit={setEditingField}
             onClose={() => setEditingField(null)}
             onStateChange={handleStateChange}
-            disableAutoSave
+            onSave={handleFieldSave}
           />
         ) : (
           <div className="space-y-2">
             <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wider">
               Juridiction
             </label>
-            <div className="p-3 bg-red-50 rounded-lg border border-red-300">
-              <p className="text-sm text-red-700">❌ Aucune juridiction chargée</p>
+            <div className="p-3 bg-gray-100 rounded-lg border border-gray-300">
+              <p className="text-sm text-gray-700">{dossier.juridiction?.designation || 'Non définie'}</p>
             </div>
           </div>
         )}
@@ -353,15 +349,15 @@ export default function StepDetails({ dossier }: StepDetailsProps) {
             onEdit={setEditingField}
             onClose={() => setEditingField(null)}
             onStateChange={handleStateChange}
-            disableAutoSave
+            onSave={handleFieldSave}
           />
         ) : (
           <div className="space-y-2">
             <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wider">
               Chambre juridique
             </label>
-            <div className="p-3 bg-yellow-50 rounded-lg border border-yellow-300">
-              <p className="text-sm text-yellow-700">⚠️ Aucune chambre disponible</p>
+            <div className="p-3 bg-gray-100 rounded-lg border border-gray-300">
+              <p className="text-sm text-gray-700">{dossier.chambreJuridique?.designation || 'Non définie'}</p>
             </div>
           </div>
         )}
@@ -376,7 +372,7 @@ export default function StepDetails({ dossier }: StepDetailsProps) {
           onEdit={setEditingField}
           onClose={() => setEditingField(null)}
           onStateChange={handleStateChange}
-          disableAutoSave
+          onSave={handleFieldSave}
         />
 
         <EditableFieldSelect 
@@ -389,7 +385,7 @@ export default function StepDetails({ dossier }: StepDetailsProps) {
           onEdit={setEditingField}
           onClose={() => setEditingField(null)}
           onStateChange={handleStateChange}
-          disableAutoSave
+          onSave={handleFieldSave}
         />
       </div>
 
@@ -404,15 +400,15 @@ export default function StepDetails({ dossier }: StepDetailsProps) {
           onEdit={setEditingField}
           onClose={() => setEditingField(null)}
           onStateChange={handleStateChange}
-          disableAutoSave
+          onSave={handleFieldSave}
         />
       ) : (
         <div className="space-y-2">
           <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wider">
             Stratégie proposée
           </label>
-          <div className="p-3 bg-red-50 rounded-lg border border-red-300">
-            <p className="text-sm text-red-700">❌ Aucune stratégie chargée</p>
+          <div className="p-3 bg-gray-100 rounded-lg border border-gray-300">
+            <p className="text-sm text-gray-700">{dossier.strategy?.designation || 'Non définie'}</p>
           </div>
         </div>
       )}
@@ -426,7 +422,7 @@ export default function StepDetails({ dossier }: StepDetailsProps) {
         onEdit={setEditingField}
         onClose={() => setEditingField(null)}
         onStateChange={handleStateChange}
-        disableAutoSave
+        onSave={handleFieldSave}
       />
 
       <EditableTextField 
@@ -438,7 +434,7 @@ export default function StepDetails({ dossier }: StepDetailsProps) {
         onEdit={setEditingField}
         onClose={() => setEditingField(null)}
         onStateChange={handleStateChange}
-        disableAutoSave
+        onSave={handleFieldSave}
       />
 
       <EditableTextField 
@@ -451,7 +447,7 @@ export default function StepDetails({ dossier }: StepDetailsProps) {
         onEdit={setEditingField}
         onClose={() => setEditingField(null)}
         onStateChange={handleStateChange}
-        disableAutoSave
+        onSave={handleFieldSave}
       />
 
       <EditableTextField 
@@ -464,7 +460,7 @@ export default function StepDetails({ dossier }: StepDetailsProps) {
         onEdit={setEditingField}
         onClose={() => setEditingField(null)}
         onStateChange={handleStateChange}
-        disableAutoSave
+        onSave={handleFieldSave}
       />
 
       <EditableTextField 
@@ -477,7 +473,7 @@ export default function StepDetails({ dossier }: StepDetailsProps) {
         onEdit={setEditingField}
         onClose={() => setEditingField(null)}
         onStateChange={handleStateChange}
-        disableAutoSave
+        onSave={handleFieldSave}
       />
 
       <EditableTextField 
@@ -490,12 +486,10 @@ export default function StepDetails({ dossier }: StepDetailsProps) {
         onEdit={setEditingField}
         onClose={() => setEditingField(null)}
         onStateChange={handleStateChange}
-        disableAutoSave
+        onSave={handleFieldSave}
       />
 
-      {/* ✅ POINTS FORTS ET FAIBLES AVEC MISE EN ÉVIDENCE */}
       <div className="grid grid-cols-2 gap-6">
-        {/* POINTS FORTS - VERT */}
         <div className="space-y-2">
           <div className="flex items-center gap-2">
             <TrendingUp className="w-5 h-5 text-green-600" />
@@ -514,12 +508,11 @@ export default function StepDetails({ dossier }: StepDetailsProps) {
               onEdit={setEditingField}
               onClose={() => setEditingField(null)}
               onStateChange={handleStateChange}
-              disableAutoSave
+              onSave={handleFieldSave}
             />
           </div>
         </div>
 
-        {/* POINTS FAIBLES - ROUGE */}
         <div className="space-y-2">
           <div className="flex items-center gap-2">
             <TrendingDown className="w-5 h-5 text-red-600" />
@@ -538,7 +531,7 @@ export default function StepDetails({ dossier }: StepDetailsProps) {
               onEdit={setEditingField}
               onClose={() => setEditingField(null)}
               onStateChange={handleStateChange}
-              disableAutoSave
+              onSave={handleFieldSave}
             />
           </div>
         </div>

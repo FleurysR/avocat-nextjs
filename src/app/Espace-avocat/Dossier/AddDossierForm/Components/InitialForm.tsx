@@ -79,7 +79,7 @@ export default function InitialForm({
             {loading ? 'Génération en cours... ⏳' : 'Générer le Dossier Complet'}
           </Button>
           <p className="text-xs text-gray-500 text-center">
-            ⏱️ Cela peut prendre 30-60 secondes selon la complexité
+            ⏱️ Cela peut prendre 30-80secondes selon la complexité
           </p>
         </form>
       </CardContent>

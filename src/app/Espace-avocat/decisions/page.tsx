@@ -18,12 +18,10 @@ export default function DecisionsPage() {
   const [dateMin, setDateMin] = useState(""); 
   const [dateMax, setDateMax] = useState(""); 
   
-  // NOUVEAU: État pour l'ordre de tri
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc'); 
   
   const router = useRouter();
 
-  // Objet de filtres pour l'API (inclut le tri)
   const filters: DecisionsFilters = useMemo(() => ({
     date_min: dateMin,
     date_max: dateMax,
@@ -36,19 +34,16 @@ export default function DecisionsPage() {
     router.push(`/Espace-avocat/decisions/${code}`);
   };
   
-  // Handler de tri (utilise useCallback)
   const handleSortChange = useCallback((order: 'asc' | 'desc') => {
     setSortOrder(order);
     setCurrentPage(1); 
   }, []);
 
-  // Handler de recherche (utilise useCallback)
   const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     setLocalSearch(e.target.value);
     setCurrentPage(1);
   }, []);
   
-  // Handler de filtres de date (utilise useCallback)
   const handleDateFilterChange = useCallback((type: 'date_min' | 'date_max', value: string) => {
     if (type === 'date_min') {
       setDateMin(value);
@@ -58,26 +53,24 @@ export default function DecisionsPage() {
     setCurrentPage(1);
   }, []);
 
-
   return (
-    <div className="bg-slate-50 dark:bg-slate-900 min-h-screen text-slate-900 dark:text-slate-50 p-4 sm:p-8">
-      <div className="container mx-auto max-w-screen-xl">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-50 overflow-x-hidden">
+      {/* Container principal avec padding responsive */}
+      <div className="w-full max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
+        
         <DecisionHeader
           localSearch={localSearch}
           onSearchChange={handleSearchChange}
           viewMode={viewMode}
           onViewModeChange={setViewMode}
-          
           dateMin={dateMin}
           dateMax={dateMax}
           onDateChange={handleDateFilterChange}
-          
-          // L'AJOUT CRITIQUE pour corriger l'erreur:
           sortOrder={sortOrder}
           onSortChange={handleSortChange}
         />
 
-        <main className="mt-6">
+        <main className="mt-6 w-full">
           {localSearch && (
             <p className="text-gray-700 dark:text-gray-300 text-center text-sm mt-2 mb-6">
               {totalHits} résultat{totalHits > 1 ? "s" : ""} pour « {localSearch} »
@@ -89,21 +82,31 @@ export default function DecisionsPage() {
               <Spinner variant="ring" size={48} className="text-indigo-600 dark:text-indigo-400" />
             </div>
           ) : error ? (
-            <p className="text-center text-red-500 p-6 bg-red-100 dark:bg-red-900 rounded-xl shadow-inner">{error}</p>
+            <p className="text-center text-red-500 p-6 bg-red-100 dark:bg-red-900 rounded-xl shadow-inner">
+              {error}
+            </p>
           ) : decisions.length === 0 ? (
-            <p className="text-gray-500 dark:text-gray-400 text-center p-6">Aucune décision trouvée.</p>
+            <p className="text-gray-500 dark:text-gray-400 text-center p-6">
+              Aucune décision trouvée.
+            </p>
           ) : (
-            <DecisionList
-              decisions={decisions}
-              viewMode={viewMode}
-              onSelect={handleSelectDecision}
-              searchTerm={localSearch}
-            />
+            <div className="w-full overflow-x-auto">
+              <DecisionList
+                decisions={decisions}
+                viewMode={viewMode}
+                onSelect={handleSelectDecision}
+                searchTerm={localSearch}
+              />
+            </div>
           )}
 
           {totalPages > 1 && (
             <div className="mt-6 flex justify-center sticky bottom-4 z-10">
-              <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
+              <Pagination 
+                currentPage={currentPage} 
+                totalPages={totalPages} 
+                onPageChange={setCurrentPage} 
+              />
             </div>
           )}
         </main>

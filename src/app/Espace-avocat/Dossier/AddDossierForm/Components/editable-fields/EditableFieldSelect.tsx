@@ -2,14 +2,8 @@
 
 /**
  * =====================================================
- * EDITABLE FIELD SELECT (MODAL CLAIR - COMME LA PAGE)
+ * EDITABLE FIELD SELECT (AVEC SAUVEGARDE AUTO ✅)
  * =====================================================
- * Fichier: src/app/Espace-avocat/Dossier/AddDossierForm/components/editable-fields/EditableFieldSelect.tsx
- * 
- * ✅ Modal CLAIR et blanc (pas sombre)
- * ✅ Fond semi-transparent léger
- * ✅ Radio buttons en couleurs claires
- * ✅ Harmonisé avec votre page
  */
 
 import React from 'react';
@@ -56,7 +50,7 @@ export default function EditableFieldSelect({
     // 1. Mettre à jour l'état
     onStateChange(fieldName, newValue);
     
-    // 2. Sauvegarder si autoSave activé
+    // 2. Sauvegarder automatiquement si activé
     if (!disableAutoSave && onSave) {
       onSave(fieldName, newValue);
     }
@@ -71,7 +65,6 @@ export default function EditableFieldSelect({
         {label}
       </label>
 
-      {/* Affichage normal (non édition) */}
       {!isEditing && (
         <div className="flex items-center justify-between p-3 bg-white rounded-lg border border-gray-300 hover:border-blue-400 transition-all hover:shadow-sm cursor-pointer">
           <span className="text-sm font-medium text-gray-900">{displayValue}</span>
@@ -85,11 +78,9 @@ export default function EditableFieldSelect({
         </div>
       )}
 
-      {/* Modal - CLAIR ET BLANC */}
       {isEditing && (
         <div className="fixed inset-0 bg-black bg-opacity-15 flex items-center justify-center z-50 backdrop-blur-sm p-4">
           <div className="bg-white rounded-xl shadow-2xl w-full max-w-md max-h-[75vh] flex flex-col border border-gray-200">
-            {/* Header Modal - CLAIR */}
             <div className="p-6 border-b border-gray-200 bg-gradient-to-r from-white via-blue-50 to-white">
               <h2 className="text-lg font-bold text-gray-900 capitalize">
                 Sélectionner {label.toLowerCase()}
@@ -97,7 +88,6 @@ export default function EditableFieldSelect({
               <p className="text-xs text-gray-500 mt-2">Cliquez sur une option pour la sélectionner</p>
             </div>
 
-            {/* Contenu - Radio Buttons CLAIRS */}
             <div className="flex-1 overflow-y-auto p-4 space-y-2">
               {options.map((option) => {
                 const isSelected = value === option.code;
@@ -116,7 +106,6 @@ export default function EditableFieldSelect({
                       disabled:opacity-50 disabled:cursor-not-allowed
                     `}
                   >
-                    {/* Radio Button */}
                     <div
                       className={`
                         w-5 h-5 rounded-full border-2 flex items-center justify-center
@@ -132,7 +121,6 @@ export default function EditableFieldSelect({
                       )}
                     </div>
                     
-                    {/* Texte */}
                     <span className={`
                       ml-3 text-sm font-medium transition-colors
                       ${isSelected ? 'text-blue-900' : 'text-gray-800'}
@@ -144,7 +132,6 @@ export default function EditableFieldSelect({
               })}
             </div>
 
-            {/* Footer Modal - CLAIR */}
             <div className="p-4 border-t border-gray-200 bg-gray-50 rounded-b-xl">
               <button
                 onClick={onClose}
